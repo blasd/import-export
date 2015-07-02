@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.beust.jcommander.JCommander;
+import com.gigaspaces.tools.importexport.config.InputParameters;
 import org.openspaces.core.GigaSpace;
 import org.openspaces.core.GigaSpaceConfigurer;
 import org.openspaces.core.space.UrlSpaceConfigurer;
@@ -75,7 +77,6 @@ public class SpaceDataImportExportMain {
 	private GigaSpace space;
 	
 	public SpaceDataImportExportMain() {
-
 		locators = new ArrayList<String>();
 		groups = new ArrayList<String>();
 		classes = new ArrayList<String>();
@@ -106,41 +107,21 @@ public class SpaceDataImportExportMain {
 	}
 	
 	public void init(String[] args) {
-		
-		for (int a = 0; a < args.length; a++) {
-			if (args[a].equals(Parameters.EXPORT.getFlagParam()) || 
-					args[a].equals(Parameters.EXPORT.getLabelParam())) 
-				export = true; 
-			if (args[a].equals(Parameters.IMPORT.getFlagParam()) || 
-					args[a].equals(Parameters.IMPORT.getLabelParam())) 
-				imp = true; 
-			if (args[a].equals(Parameters.SPACE.getFlagParam()) || 
-					args[a].equals(Parameters.SPACE.getLabelParam())) 
-				name= args[++a];
-			if (args[a].equals(Parameters.TEST.getFlagParam()) || 
-					args[a].equals(Parameters.TEST.getLabelParam())) 
-				test = true;
-			if (args[a].equals(Parameters.BATCH.getFlagParam()) || 
-					args[a].equals(Parameters.BATCH.getLabelParam())) 
-				batch = Integer.valueOf(args[++a]);
-			if (args[a].equals(Parameters.GROUP.getFlagParam()) || 
-					args[a].equals(Parameters.GROUP.getLabelParam()))
-				for (String group : args[++a].split(SEPARATE))  groups.add(group);
-			if (args[a].equals(Parameters.CLASS.getFlagParam()) ||
-					args[a].equals(Parameters.CLASS.getLabelParam()))
-				for (String clazz : args[++a].split(SEPARATE))  classes.add(clazz);
-			if (args[a].equals(Parameters.LOCATE.getFlagParam()) ||
-					args[a].equals(Parameters.LOCATE.getLabelParam()))
-				for (String locator : args[++a].split(SEPARATE))  locators.add(locator);
-			if (args[a].equals(Parameters.PART.getFlagParam()) ||
-					args[a].equals(Parameters.PART.getLabelParam()))
-				for (String partition : args[++a].split(SEPARATE))  partitions.add(Integer.valueOf(partition));
-            if(args[a].equals(Parameters.USERNAME.getFlagParam()) || args[a].equals(Parameters.USERNAME.getLabelParam()))
-                username = args[++a];
+        InputParameters params = new InputParameters();
+        JCommander jCommander = new JCommander(params);
+        jCommander.parse(args);
+        export = params.getExport();
+        imp = params.getImp();
+        name= params.getName();
+        test = params.getTest();
+        batch = params.getBatch();
+        groups = params.getGroups();
+        classes = params.getClasses();
+        locators = params.getLocators();
+        partitions = params.getPartitions();
+        username = params.getUsername();
+        password = params.getPassword();
 
-            if(args[a].equals(Parameters.PASSWORD.getFlagParam()) || args[a].equals(Parameters.PASSWORD.getLabelParam()))
-                password = args[++a];
-		}
 		if (locators.isEmpty()) locators.add(LOCALHOST);
 		if (name == null) name = SPACE;
 	}

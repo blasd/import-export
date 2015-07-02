@@ -435,7 +435,9 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 
 							logger.info("export operation took " + duration + " millis");
 							lines.add("export operation took " + duration + " millis");
-						} catch (UnusableEntryException e) {
+						} catch (Exception e) {
+                            logger.info("import exception = " + e);
+                            lines.add("import exception = " + e);
 							e.printStackTrace();
 						}
 						// close the output file
