@@ -3,18 +3,19 @@
  */
 package com.gigaspaces.tools.importexport;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.beust.jcommander.JCommander;
 import com.gigaspaces.tools.importexport.config.InputParameters;
+import org.apache.commons.lang.StringUtils;
 import org.openspaces.core.GigaSpace;
 import org.openspaces.core.GigaSpaceConfigurer;
 import org.openspaces.core.space.UrlSpaceConfigurer;
 
 import com.gigaspaces.async.AsyncFuture;
+
+import static org.apache.commons.collections.CollectionUtils.*;
 
 /**
  * @author jb
@@ -22,83 +23,29 @@ import com.gigaspaces.async.AsyncFuture;
  */
 public class SpaceDataImportExportMain {
 
-	// default parameters
-	private static String LOCALHOST = "localhost";
-	private static String SPACE = "space";
-	private static String SEPARATE = ",";
-	
 	private static Logger logger = Logger.getLogger("com.gigaspaces.common");
 
-    public static enum Parameters {
-		
-		EXPORT('e', "export", "performs space class export"),
-        IMPORT('i', "import", "performs space class import"),
-		GROUP('g', "groups", "the names of lookup groups - comma separated"),
-		LOCATE('l', "locators", "the names of lookup services hosts - comma separated"),
-		SPACE('s', "space", "the name of the space"),
-		CLASS('c', "classes", "the classes whose objects to import/export - comma separated"),
-		BATCH('b', "batch", "the batch size - default is 1000"),
-		PART('p', "partitions", "the partition(s) to restore - comma separated"),
-		HELP('h', "help", "show this message"),
-		TEST('t', "test", "performs a sanity check"),
-        USERNAME('u', "username", "The username when connecting to a secured space."),
-        PASSWORD('a', "password", "The password when connecting to a secured space.");
+    private InputParameters params;
 
-		private Parameters(Character flag, String label, String desc) {
-
-			this.flag = flag;
-			this.label = label;
-			this.desc = desc;
-		}
-		private Character flag;
-		private String label;
-		private String desc;
-		
-		public Character getFlag() { return flag; }
-		public String getFlagParam() { return "-" + flag; }
-		public String getLabel() { return label; }
-		public String getLabelParam() { return "--" + label; }
-		public String getDesc() { return desc; }
-	}
-
-	private String name;
-	private File file;
-	private Boolean export = false;
-	private Boolean imp = true;
-	private Boolean test = false;
-	private Integer batch = 1000;
-    private String username;
-    private String password;
-	
-	private List<String> locators;
-	private List<String> groups;
-	private List<String> classes;
-	private List<Integer> partitions;
 	private GigaSpace space;
-	
-	public SpaceDataImportExportMain() {
-		locators = new ArrayList<String>();
-		groups = new ArrayList<String>();
-		classes = new ArrayList<String>();
-		partitions = new ArrayList<Integer>();
-	}
 
-	
 	public String getSpaceUrl() {
 
-		String spaceUrl = "jini://*/*/" + name;
-		
-		if (locators != null && ! locators.isEmpty()) {
+		String spaceUrl = "jini://*/*/" + params.getName();
+
+		if (isNotEmpty(params.getLocators())) {
 			spaceUrl = spaceUrl + "?locators=";
-			for (int l = 0; l < locators.size(); l++) {
-				spaceUrl = spaceUrl + (l > 0 ? "," : "") + locators.get(l);
+            //TODO check logic
+			for (int l = 0; l < params.getLocators().size(); l++) {
+				spaceUrl = spaceUrl + (l > 0 ? "," : "") + params.getLocators().get(l);
 			}
 			return spaceUrl;
 		}
-		if (groups != null && ! groups.isEmpty()) {
+		if (isNotEmpty(params.getGroups())) {
+            //TODO check possible error
 			spaceUrl = spaceUrl + "?locators=";
-			for (int g = 0; g < groups.size(); g++) {
-				spaceUrl = spaceUrl + (g > 0 ? "," : "") + groups.get(g);
+			for (int g = 0; g < params.getGroups().size(); g++) {
+				spaceUrl = spaceUrl + (g > 0 ? "," : "") + params.getGroups().get(g);
 			}
 			return spaceUrl;
 		}
@@ -107,28 +54,16 @@ public class SpaceDataImportExportMain {
 	}
 	
 	public void init(String[] args) {
-        InputParameters params = new InputParameters();
-        JCommander jCommander = new JCommander(params);
+        InputParameters params1 = new InputParameters();
+        JCommander jCommander = new JCommander(params1);
         jCommander.parse(args);
-        export = params.getExport();
-        imp = params.getImp();
-        name= params.getName();
-        test = params.getTest();
-        batch = params.getBatch();
-        groups = params.getGroups();
-        classes = params.getClasses();
-        locators = params.getLocators();
-        partitions = params.getPartitions();
-        username = params.getUsername();
-        password = params.getPassword();
-
-		if (locators.isEmpty()) locators.add(LOCALHOST);
-		if (name == null) name = SPACE;
+        params = params1;
+		//if (locators.isEmpty()) locators.add(LOCALHOST);
 	}
 	
 	public void verify() {
 		
-		if (! export && ! imp) {
+		if (! params.getExport() && ! params.getImp()) {
 			System.out.println("operation required: specify export or import");
 			showHelpMessage();
 		}
@@ -144,25 +79,26 @@ public class SpaceDataImportExportMain {
 
 		exporter.init(args);
 		exporter.verify();
+        InputParameters config = exporter.params;
 		try {
 			UrlSpaceConfigurer urlConfig = new UrlSpaceConfigurer(exporter.getSpaceUrl());
 
-            if(exporter.username != null && !exporter.username.isEmpty()){
-                urlConfig.credentials(exporter.username, exporter.password);
+            if(StringUtils.isNotEmpty(config.getUsername())){
+                urlConfig.credentials(config.getUsername(), config.getPassword());
             }
 
 			GigaSpaceConfigurer gigaConfig = new GigaSpaceConfigurer(urlConfig.lookupTimeout(20000).space());
 
 			exporter.setSpace(gigaConfig.gigaSpace());
 
-			SpaceClassExportTask task = new SpaceClassExportTask(exporter);
+			SpaceClassExportTask task = new SpaceClassExportTask(config);
 
 			AsyncFuture<List<String>> results = null;
-			if (exporter.getPartitions().isEmpty()) {
+			if (config.getPartitions().isEmpty()) {
 				results = exporter.getSpace().execute(task); 
 			}
 			else {
-				Object[] spacePartitions = (Object[]) exporter.getPartitions().toArray(new Integer[0]);
+				Object[] spacePartitions = (Object[]) config.getPartitions().toArray(new Integer[0]);
 				results = exporter.getSpace().execute(task, spacePartitions); 
 			}
 			System.out.print("executing tasks");
@@ -187,96 +123,7 @@ public class SpaceDataImportExportMain {
 	}
 
 	public static void showHelpMessage() {
-		
-		System.out.println("GigaSpace Test Platform");
-		System.out.println("Parameters:");
-		for (Parameters params : Parameters.values()) {
-			String pstr = String.format("\t-%c %-9s - %s", params.getFlag(), params.getLabel(), params.getDesc());
-			System.out.println(pstr);
-		}
-		System.exit(0);
-	}
-	
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * @param name the name to set
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	/**
-	 * @return the locators
-	 */
-	public List<String> getLocators() {
-		return locators;
-	}
-
-	/**
-	 * @param locators the locators to set
-	 */
-	public void setLocators(List<String> locators) {
-		this.locators = locators;
-	}
-
-	/**
-	 * @return the groups
-	 */
-	public List<String> getGroups() {
-		return groups;
-	}
-
-	/**
-	 * @param groups the groups to set
-	 */
-	public void setGroups(List<String> groups) {
-		this.groups = groups;
-	}
-
-	/**
-	 * @return the classes
-	 */
-	public List<String> getClasses() {
-		return classes;
-	}
-
-	/**
-	 * @param classes the classes to set
-	 */
-	public void setClasses(List<String> classes) {
-		this.classes = classes;
-	}
-	
-	/**
-	 * @return the file
-	 */
-	public File getFile() {
-		return file;
-	}
-
-	/**
-	 * @param file the file to set
-	 */
-	public void setFile(File file) {
-		this.file = file;
-	}
-
-	public boolean isTest() {
-		return test;
-	}
-	
-	public Boolean getExport() {
-		return export;
-	}
-
-	public void setExport(Boolean export) {
-		this.export = export;
+		//TODO
 	}
 
 	public void setSpace(GigaSpace space) { 
@@ -288,24 +135,4 @@ public class SpaceDataImportExportMain {
 		
 		return space;
 	}
-
-	public List<Integer> getPartitions() {
-		return partitions;
-	}
-
-	public void setPartitions(List<Integer> partitions) {
-		this.partitions = partitions;
-	}
-
-
-	public Integer getBatch() {
-		return batch;
-	}
-
-
-	public void setBatch(Integer batch) {
-		this.batch = batch;
-	}
-	
-	
 }

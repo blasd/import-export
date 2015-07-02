@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import com.gigaspaces.tools.importexport.config.InputParameters;
 import net.jini.core.entry.UnusableEntryException;
 
 import org.openspaces.core.GigaSpace;
@@ -97,9 +98,8 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		this.export = export;
 	}
 
-	public SpaceClassExportTask(SpaceDataImportExportMain exporter) {
-
-		this(exporter.getClasses(), exporter.getExport(), exporter.getBatch()); 
+	public SpaceClassExportTask(InputParameters config) {
+		this(config.getClasses(), config.getExport(), config.getBatch());
 	}
 	
 
