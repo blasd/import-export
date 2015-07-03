@@ -29,36 +29,11 @@ public class SpaceDataImportExportMain {
 
 	private GigaSpace space;
 
-	public String getSpaceUrl() {
-
-		String spaceUrl = "jini://*/*/" + params.getName();
-
-		if (isNotEmpty(params.getLocators())) {
-			spaceUrl = spaceUrl + "?locators=";
-            //TODO check logic
-			for (int l = 0; l < params.getLocators().size(); l++) {
-				spaceUrl = spaceUrl + (l > 0 ? "," : "") + params.getLocators().get(l);
-			}
-			return spaceUrl;
-		}
-		if (isNotEmpty(params.getGroups())) {
-            //TODO check possible error
-			spaceUrl = spaceUrl + "?locators=";
-			for (int g = 0; g < params.getGroups().size(); g++) {
-				spaceUrl = spaceUrl + (g > 0 ? "," : "") + params.getGroups().get(g);
-			}
-			return spaceUrl;
-		}
-
-		return spaceUrl;
-	}
-	
 	public void init(String[] args) {
         InputParameters params1 = new InputParameters();
         JCommander jCommander = new JCommander(params1);
         jCommander.parse(args);
         params = params1;
-		//if (locators.isEmpty()) locators.add(LOCALHOST);
 	}
 	
 	public void verify() {
@@ -81,7 +56,7 @@ public class SpaceDataImportExportMain {
 		exporter.verify();
         InputParameters config = exporter.params;
 		try {
-			UrlSpaceConfigurer urlConfig = new UrlSpaceConfigurer(exporter.getSpaceUrl());
+			UrlSpaceConfigurer urlConfig = new UrlSpaceConfigurer(new SpaceURLBuilder(config).buildSpaceURL());
 
             if(StringUtils.isNotEmpty(config.getUsername())){
                 urlConfig.credentials(config.getUsername(), config.getPassword());
