@@ -113,66 +113,6 @@ public class FindSpaceClassTask implements DistributedTask<String, List<String>>
 		return result.toString();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.openspaces.core.executor.Task#execute()
-	 */
-	public String executeX() throws Exception {
-
-		if (space == null) return "space is null!";
-		this.factory = new AdminFactory();
-		String result = null;
-		try {
-			List<String> names = new ArrayList<String>();
-			LookupLocator[] locators = space.getSpace().getURL().getLookupLocators();
-			if (locators != null) {
-				for (LookupLocator locator : locators) {
-					factory.addLocator(locator.getHost() + ":" + locator.getPort());
-					blogger.info("locator:" + locator.getHost() + ":" + locator.getPort());
-				}
-			}
-			for (String group : space.getSpace().getURL().getLookupGroups()) {
-				factory.addGroup(group);
-				blogger.info("group:" + group);
-			}
-			
-			System.out.println(space.getSpace().getFinderURL().toString());
-			// if this is an integrated processing unit they are invisible until we do this
-			Admin admin = factory.create();
-			if (admin != null) { 
-				Spaces spaces = admin.getSpaces();
-				int passes = 0;
-				boolean discovered = false;
-				while (spaces.getSpaces().length == 0 && passes < 15 && ! discovered) {
-					Thread.sleep(1000L);
-					passes++;
-					if (spaces.getSpaces().length == 0 && passes ==15) {
-						factory.discoverUnmanagedSpaces();
-						spaces = admin.getSpaces();
-						passes = 0;
-						discovered = true;
-					}
-				}
-				if (name != null) {
-					names.addAll(getSpaceClasses(spaces.getSpaceByName(name)));
-				}
-				else {
-					for (Space s : spaces) {
-						names.addAll(getSpaceClasses(s));
-						blogger.info("space:" + s.getName());
-					}
-				}
-				result = names.toString();
-			}
-			else {
-				result = "admin is null!";
-			}
-		}
-		catch (Exception e) {
-			result = e.getStackTrace()[0].toString();
-		}
-		return result.toString();
-	}
-	
 	
 	/* (non-Javadoc)
 	 * @see com.gigaspaces.async.AsyncResultsReducer#reduce(java.util.List)
@@ -202,61 +142,52 @@ public class FindSpaceClassTask implements DistributedTask<String, List<String>>
 
 		List<String> names = new ArrayList<String>();
 		if (space == null) return names;
-		SpaceInstance[] instances = space.getInstances();
-		while (instances.length == 0) {
-			try {
-				Thread.sleep(1000L);
-			} catch (InterruptedException e) { e.printStackTrace();
-			}
-			instances = space.getInstances();
-		}
+        SpaceInstance[] instances = getSpaceInstances(space);
 		for (SpaceInstance instance : instances) {
-			SpaceInstanceRuntimeDetails details = instance.getRuntimeDetails();
-			while (details == null) {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) { e.printStackTrace();
-				}
-				details = instance.getRuntimeDetails();
-			}
-			if (details != null) {
-				for (String n : details.getClassNames()) {
-					if (! names.contains(n)) names.add(n);
-				}
-			}
+            SpaceInstanceRuntimeDetails details = getSpaceInstanceRuntimeDetails(instance);
+            for (String n : details.getClassNames()) {
+                if (! names.contains(n)) names.add(n);
+            }
 		}
 		return names;
 	}
 
-	public static List<String> getLocalSpaceClasses(Space space) {
-
+    public static List<String> getLocalSpaceClasses(Space space) {
 		List<String> names = new ArrayList<String>();
 		if (space == null) return names;
-		SpaceInstance[] instances = space.getInstances();
-		while (instances.length == 0) {
-			try {
-				Thread.sleep(1000L);
-			} catch (InterruptedException e) { e.printStackTrace();
-			}
-			instances = space.getInstances();
-		}
+        SpaceInstance[] instances = getSpaceInstances(space);
 		for (SpaceInstance instance : instances) {
-			SpaceInstanceRuntimeDetails details = instance.getRuntimeDetails();
-			while (details == null) {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) { e.printStackTrace();
-				}
-				details = instance.getRuntimeDetails();
-			}
-			if (details != null) {
-				for (String n : details.getClassNames()) {
-					if (! names.contains(n)) names.add(n);
-				}
-			}
+            SpaceInstanceRuntimeDetails details = getSpaceInstanceRuntimeDetails(instance);
+            for (String n : details.getClassNames()) {
+                if (! names.contains(n)) names.add(n);
+            }
 		}
 		return names;
 	}
+
+    private static SpaceInstance[] getSpaceInstances(Space space) {
+        SpaceInstance[] instances = space.getInstances();
+        while (instances.length == 0) {
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) { e.printStackTrace();
+            }
+            instances = space.getInstances();
+        }
+        return instances;
+    }
+
+    private static SpaceInstanceRuntimeDetails getSpaceInstanceRuntimeDetails(SpaceInstance instance) {
+        SpaceInstanceRuntimeDetails details = instance.getRuntimeDetails();
+        while (details == null) {
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) { e.printStackTrace();
+            }
+            details = instance.getRuntimeDetails();
+        }
+        return details;
+    }
 
 }
 

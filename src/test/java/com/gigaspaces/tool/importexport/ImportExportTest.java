@@ -63,8 +63,6 @@ public class ImportExportTest {
         gsms.waitFor(1);
         ProcessingUnit processingUnit = gsms.
                 deploy(new SpaceDeployment("mySpace").numberOfInstances(1).numberOfBackups(1));
-
-        //wait for the instances to start
         Space space = processingUnit.waitForSpace();
         space.waitFor(2);
         return space.getGigaSpace();
