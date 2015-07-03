@@ -260,7 +260,6 @@ public class SpaceClassExporter {
 	}
 
 	public void writeObjects() {
-		
 		writeObjects(gigaSpace, file, classes);
 	}
 	
@@ -311,13 +310,6 @@ public class SpaceClassExporter {
 			e.printStackTrace();
 		}
 	}
-
-/*	
-	public HashMap<Class<?>, List<Object>> readObjects(ObjectInputStream input) {
-		
-		return readObjects(input, null, false, true);
-	}
-*/	
 
 	public void readObjects() {
 		

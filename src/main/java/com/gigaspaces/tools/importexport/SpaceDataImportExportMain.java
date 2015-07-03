@@ -8,14 +8,13 @@ import java.util.logging.Logger;
 
 import com.beust.jcommander.JCommander;
 import com.gigaspaces.tools.importexport.config.InputParameters;
-import org.apache.commons.lang.StringUtils;
 import org.openspaces.core.GigaSpace;
 import org.openspaces.core.GigaSpaceConfigurer;
 import org.openspaces.core.space.UrlSpaceConfigurer;
 
 import com.gigaspaces.async.AsyncFuture;
 
-import static org.apache.commons.collections.CollectionUtils.*;
+import static com.google.common.base.Strings.*;
 
 /**
  * @author jb
@@ -37,7 +36,6 @@ public class SpaceDataImportExportMain {
 	}
 	
 	public void verify() {
-		
 		if (! params.getExport() && ! params.getImp()) {
 			System.out.println("operation required: specify export or import");
 			showHelpMessage();
@@ -58,7 +56,7 @@ public class SpaceDataImportExportMain {
 		try {
 			UrlSpaceConfigurer urlConfig = new UrlSpaceConfigurer(new SpaceURLBuilder(config).buildSpaceURL());
 
-            if(StringUtils.isNotEmpty(config.getUsername())){
+            if(!isNullOrEmpty(config.getUsername())){
                 urlConfig.credentials(config.getUsername(), config.getPassword());
             }
 
@@ -73,7 +71,7 @@ public class SpaceDataImportExportMain {
 				results = exporter.getSpace().execute(task); 
 			}
 			else {
-				Object[] spacePartitions = (Object[]) config.getPartitions().toArray(new Integer[0]);
+				Object[] spacePartitions = config.getPartitions().toArray(new Integer[0]);
 				results = exporter.getSpace().execute(task, spacePartitions); 
 			}
 			System.out.print("executing tasks");
@@ -101,13 +99,11 @@ public class SpaceDataImportExportMain {
 		//TODO
 	}
 
-	public void setSpace(GigaSpace space) { 
-		
+	public void setSpace(GigaSpace space) {
 		this.space = space; 
 	}
 	
 	public GigaSpace getSpace() {
-		
 		return space;
 	}
 }
