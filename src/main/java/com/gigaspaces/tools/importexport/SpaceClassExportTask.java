@@ -201,7 +201,7 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		Integer partitionId = clusterInfo.getInstanceId();
 		for (String className : classList) {
 			File file = new File(className + DOT + partitionId + SUFFIX);
-			SpaceClassExportThread operation = new SpaceClassExportThread(space, file, className, batch, partitionId);
+			SpaceClassExportThread operation = new SpaceClassExportThread(space, file, className, batch);
 			logger.info("starting export thread for " + className);
 			audit.add("starting export thread for " + className);
 			threadList.add(operation);
@@ -280,7 +280,7 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 
 
 	
-	public class ImportClassFileFilter implements FilenameFilter {
+	private class ImportClassFileFilter implements FilenameFilter {
 
 		private Integer partitionId;
 		

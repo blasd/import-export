@@ -28,16 +28,13 @@ public class SpaceClassExportThread extends Thread {
     private File file;
     private String className;
     private Integer batch = 1000;
-    private Integer partitionId;
     private SerialAudit lines;
 
-    public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch, Integer partitionId) {
-
+    public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch) {
         this.space = space;
         this.file = file;
         this.className = className;
         this.batch = batch;
-        this.partitionId = partitionId;
         this.lines = new SerialAudit();
     }
 
@@ -151,7 +148,9 @@ public class SpaceClassExportThread extends Thread {
                         lines.add("read " + count + " objects from space partition");
 
                         Long start = System.currentTimeMillis();
-                        while (iterator.hasNext()) oos.writeObject(iterator.next());
+                        while (iterator.hasNext()) {
+                            oos.writeObject(iterator.next());
+                        }
                         Long duration = (System.currentTimeMillis() - start);
 
                         logger.info("export operation took " + duration + " millis");
@@ -161,13 +160,18 @@ public class SpaceClassExportThread extends Thread {
                         lines.add("import exception = " + e);
                         e.printStackTrace();
                     }
-                    // close the output file
-                    zos.finish();
-                    oos.close();
+
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }   finally {
+            try {
+                zos.finish();
+                oos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
