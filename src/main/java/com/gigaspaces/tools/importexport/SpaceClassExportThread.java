@@ -46,7 +46,6 @@ public class SpaceClassExportThread implements Runnable {
     private Object getClassTemplate(String className) {
 
         Object template = null;
-
         try {
             template = Class.forName(className).newInstance();
             logger.fine("returning " + template.getClass().getSimpleName() + " (SpaceDocument)" );
@@ -56,13 +55,12 @@ public class SpaceClassExportThread implements Runnable {
             if (! descriptor.isConcreteType()) {
                 template = new SpaceDocument(className);
                 logger.fine("returning SpaceDocument");
-            }
-            else
+            }   else {
                 logger.warning(cnfe.getMessage());
-        } catch (InstantiationException ie) { logger.warning(ie.getMessage());
-        } catch (IllegalAccessException iae) { logger.warning(iae.getMessage());
+            }
+        } catch (InstantiationException | IllegalAccessException ie) {
+            logger.warning(ie.getMessage());
         }
-
         return template;
     }
 
@@ -109,21 +107,18 @@ public class SpaceClassExportThread implements Runnable {
             Object template = getClassTemplate(className);
             if (template != null) {
                 String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
-                logger.info("reading space " + type + " : " + className);
-                lines.add("reading space " + type + " : " + className);
+                logMessage("reading space " + type + " : " + className);
                 Integer count = space.count(template);
 
                 if (count > 0) {
-                    logger.info("space partition contains " + count + " objects");
+                    logMessage("space partition contains " + count + " objects");
                     lines.add("space partition contains " + count + " objects");
 
                     // create the output file stream
                     zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
                     oos = new ObjectOutputStream(zos);
 
-                    logger.info("writing to file : " + file.getAbsolutePath());
-                    lines.add("writing to file : " + file.getAbsolutePath());
-
+                    logMessage("writing to file : " + file.getAbsolutePath());
                     // write some header data
                     oos.writeUTF(SpaceDocument.class.isInstance(template) ? DOCUMENT : className);
                     oos.writeInt(count);
@@ -143,21 +138,15 @@ public class SpaceClassExportThread implements Runnable {
 
                     try {
                         iterator = new GSIterator(space.getSpace(), templates, config);
-
-                        logger.info("read " + count + " objects from space partition");
-                        lines.add("read " + count + " objects from space partition");
-
+                        logMessage("read " + count + " objects from space partition");
                         Long start = System.currentTimeMillis();
                         while (iterator.hasNext()) {
                             oos.writeObject(iterator.next());
                         }
                         Long duration = (System.currentTimeMillis() - start);
-
-                        logger.info("export operation took " + duration + " millis");
-                        lines.add("export operation took " + duration + " millis");
+                        logMessage("export operation took " + duration + " millis");
                     } catch (Exception e) {
-                        logger.info("import exception = " + e);
-                        lines.add("import exception = " + e);
+                        logMessage("import exception = " + e);
                         e.printStackTrace();
                     }
 
@@ -174,4 +163,10 @@ public class SpaceClassExportThread implements Runnable {
             }
         }
     }
+
+    private void logMessage(String message){
+        logger.info(message);
+        lines.add(message);
+    }
+
 }

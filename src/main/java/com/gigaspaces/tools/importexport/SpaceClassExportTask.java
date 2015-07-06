@@ -56,17 +56,14 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
     private ClusterInfo clusterInfo;		
 
     public enum Type {
-    	
     	DOC("document"),
     	CLASS("class");
-    	
     	private String value;
     	private Type(String value) { this.value = value; }
     	public String getValue() { return value; }
     }
     
 	public SpaceClassExportTask() {
-		
 		classNames = new ArrayList<String>();
 		audit = new SerialAudit();
 	}
@@ -116,8 +113,7 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 						logger.warning("space class export task - class: " + className + " was not found!");
 					}
 				}
-				logger.info("confirmed " + classNames.size() + " classes");
-				audit.add("confirmed " + classNames.size() + " classes");
+				logMessage("confirmed " + classNames.size() + " classes");
 			}
 			else {
 				Object classList[] = remoteAdmin.getRuntimeInfo().m_ClassNames.toArray();
@@ -130,27 +126,24 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 					logger.fine(clazz.toString());
 					if (! clazz.toString().equals(OBJECT)) classNames.add(clazz.toString());
 				}
-				logger.info("found " + classNames.size() + " classes");
-				audit.add("found " + classNames.size() + " classes");
+				logMessage("found " + classNames.size() + " classes");
 			}
 			
 			if (classNames.size() > 0)
 				writeObjects(classNames);
-		}
-		else {
+		}   else {
 			File[] files = new File(DOT).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
 			List<String> fileNames = new ArrayList<String>();
 			for (File file : files) {
 				if (! classNames.isEmpty()) {
 					// remove elements from the file list
-					if (classNames.contains(getClassNameFromImportFile(file))) 
+					if (classNames.contains(getClassNameFromImportFile(file)))
 						fileNames.add(file.toString());
 				}
 				else fileNames.add(file.toString());
 			}
 
-			logger.info("importer found " + fileNames.size() + " files");
-			audit.add("importer found " + fileNames.size() + " files");
+			logMessage("importer found " + fileNames.size() + " files");
 			if (fileNames.size() > 0)
 				readObjects(fileNames);
 		}
@@ -200,27 +193,22 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		for (String className : classList) {
 			File file = new File(className + DOT + partitionId + SUFFIX);
 			SpaceClassExportThread operation = new SpaceClassExportThread(space, file, className, batch);
-			logger.info("starting export thread for " + className);
-			audit.add("starting export thread for " + className);
+			logMessage("starting export thread for " + className);
             executor.submit(operation);
 			threadList.add(operation);
 		}
 
-        logger.info("waiting for " + classList.size() + " import operations to complete-complete");
+        logMessage("waiting for " + classList.size() + " import operations to complete-complete");
         executor.shutdown();
-        logger.info("EXECUTOR SHUTDOWN");
         while (!executor.isTerminated()){
 
         }
-        logger.info("waiting for " + classList.size() + " import operations to COMPLETED");
+        logMessage("waiting for " + classList.size() + " import operations to COMPLETED");
 		for (SpaceClassExportThread thread : threadList) {
 			for (String line : thread.getMessage())
 				(audit).add(line);
 		}
-		
-		audit.add("finished writing " + classList.size() + " classes");
-		logger.info("finished writing " + classList.size() + " classes");
-		
+		logMessage("finished writing " + classList.size() + " classes");
 	}
 
 	private void readObjects(List<String> classList) {
@@ -239,13 +227,12 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		for (String className : classList) {
 			// we're being passed a file instead of a class name
 			File file = new File(className);
-			logger.info("importing class " + getClassNameFromImportFile(file) + " into partition " + partitionId);
-			audit.add("importing class " + getClassNameFromImportFile(file) + " into partition " + partitionId);
+			logMessage("importing class " + getClassNameFromImportFile(file) + " into partition " + partitionId);
 			SpaceClassImportThread operation = new SpaceClassImportThread(space, file, 1000);
 			threadList.add(operation);
             executor.submit(operation);
 		}
-		logger.info("waiting for " + classList.size() + " import operations to complete");
+		logMessage("waiting for " + classList.size() + " import operations to complete");
         executor.shutdown();
         while (!executor.isTerminated()){
 
@@ -255,8 +242,7 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 				audit.add(line, false);
 			}
 		}
-		logger.info("finished reading " + classList.size() + " files");
-		audit.add("finished reading " + classList.size() + " files");
+		logMessage("finished reading " + classList.size() + " files");
 	}
 
 	private class ImportClassFileFilter implements FilenameFilter {
@@ -278,5 +264,10 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 	public void setClusterInfo(ClusterInfo clusterInfo) {
 		this.clusterInfo = clusterInfo;
 	}
+
+    private void logMessage(String message){
+        logger.info(message);
+        audit.add(message);
+    }
 
 }
