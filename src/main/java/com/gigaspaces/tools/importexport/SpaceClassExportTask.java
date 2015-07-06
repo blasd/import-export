@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 import com.gigaspaces.tools.importexport.config.InputParameters;
@@ -172,21 +174,16 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 	 */
 	@Override
 	public List<String> reduce(List<AsyncResult<SerialList>> args) throws Exception {
-		
 		List<String> result = new ArrayList<String>();
 		for (AsyncResult<SerialList> arg : args) {
-			if (arg.getException() == null) {
-				if (arg.getResult() != null) {
-					for (String str : arg.getResult()) 
-						result.add(str);
-				}
-			}
-			else {
+			if (arg.getException() == null && arg.getResult() != null) {
+                for (String str : arg.getResult())
+                    result.add(str);
+			}   else {
 				result.add("exception:" + arg.getException().getMessage());
 				arg.getException().printStackTrace();
 			}
 		}
-		
 		return result;
 	}
 
@@ -196,7 +193,8 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 	}
 
 	private void writeObjects(GigaSpace space, ClusterInfo clusterInfo, List<String> classList) {
-		
+
+        ExecutorService executor = Executors.newFixedThreadPool(classList.size());
 		List<SpaceClassExportThread> threadList = new ArrayList<SpaceClassExportThread>();
 		Integer partitionId = clusterInfo.getInstanceId();
 		for (String className : classList) {
@@ -204,29 +202,20 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 			SpaceClassExportThread operation = new SpaceClassExportThread(space, file, className, batch);
 			logger.info("starting export thread for " + className);
 			audit.add("starting export thread for " + className);
+            executor.submit(operation);
 			threadList.add(operation);
-			operation.start();
 		}
 
-		boolean terminated = false;
-		if (threadList.size() > 0)
-			logger.info("waiting for " + classList.size() + " export operations to complete");
-		while (! terminated) {
-			boolean running = false;
-			for (SpaceClassExportThread thread : threadList)
-				running |= ! thread.getState().equals(Thread.State.TERMINATED);
-			if (! running) terminated = true;
-			else {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) {
-					logger.warning("exception during thread sleep - " + e.getMessage());
-				}
-			}
-		}
+        logger.info("waiting for " + classList.size() + " import operations to complete-complete");
+        executor.shutdown();
+        logger.info("EXECUTOR SHUTDOWN");
+        while (!executor.isTerminated()){
+
+        }
+        logger.info("waiting for " + classList.size() + " import operations to COMPLETED");
 		for (SpaceClassExportThread thread : threadList) {
 			for (String line : thread.getMessage())
-				((List<String>) audit).add(line);
+				(audit).add(line);
 		}
 		
 		audit.add("finished writing " + classList.size() + " classes");
@@ -244,6 +233,9 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		List<SpaceClassImportThread> threadList = new ArrayList<SpaceClassImportThread>();
 
 		Integer partitionId = clusterInfo.getInstanceId();
+
+        ExecutorService executor = Executors.newFixedThreadPool(classList.size());
+
 		for (String className : classList) {
 			// we're being passed a file instead of a class name
 			File file = new File(className);
@@ -251,24 +243,13 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 			audit.add("importing class " + getClassNameFromImportFile(file) + " into partition " + partitionId);
 			SpaceClassImportThread operation = new SpaceClassImportThread(space, file, 1000);
 			threadList.add(operation);
-			operation.start();
+            executor.submit(operation);
 		}
-		boolean terminated = false;
 		logger.info("waiting for " + classList.size() + " import operations to complete");
-		while (! terminated) {
-			boolean running = false;
-			for (Thread thread : threadList) {
-				running |= ! thread.getState().equals(Thread.State.TERMINATED);
-			}
-			if (! running) terminated = true;
-			else {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+        executor.shutdown();
+        while (!executor.isTerminated()){
+
+        }
 		for (SpaceClassImportThread thread : threadList) {
 			for (String line : thread.getMessage()) {
 				audit.add(line, false);
@@ -278,8 +259,6 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		audit.add("finished reading " + classList.size() + " files");
 	}
 
-
-	
 	private class ImportClassFileFilter implements FilenameFilter {
 
 		private Integer partitionId;
@@ -294,8 +273,6 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
             return name.endsWith(partitionId + SUFFIX);
         }
 	}
-	
-
 
 	@Override
 	public void setClusterInfo(ClusterInfo clusterInfo) {

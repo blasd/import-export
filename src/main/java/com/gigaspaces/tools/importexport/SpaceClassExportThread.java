@@ -20,7 +20,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.gigaspaces.tools.importexport.SpaceClassExportTask.*;
 
-public class SpaceClassExportThread extends Thread {
+public class SpaceClassExportThread implements Runnable {
 
     private final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
 

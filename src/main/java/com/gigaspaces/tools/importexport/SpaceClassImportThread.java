@@ -17,7 +17,7 @@ import java.util.zip.GZIPInputStream;
 
 import static com.gigaspaces.tools.importexport.SpaceClassExportTask.*;
 
-public class SpaceClassImportThread extends Thread {
+public class SpaceClassImportThread implements Runnable {
 
     private final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
 
