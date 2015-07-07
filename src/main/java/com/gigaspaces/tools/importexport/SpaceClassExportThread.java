@@ -18,7 +18,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-import static com.gigaspaces.tools.importexport.SpaceClassExportTask.*;
+import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
 public class SpaceClassExportThread implements Runnable {
 

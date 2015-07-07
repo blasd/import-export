@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import static com.gigaspaces.tools.importexport.SpaceClassExportTask.*;
+import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
 public class SpaceClassImportThread implements Runnable {
 

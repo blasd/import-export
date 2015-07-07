@@ -64,7 +64,7 @@ public class SpaceDataImportExportMain {
 
 			exporter.setSpace(gigaConfig.gigaSpace());
 
-			SpaceClassExportTask task = new SpaceClassExportTask(config);
+			ExportImportTask task = new ExportImportTask(config);
 
 			AsyncFuture<List<String>> results = null;
 			if (config.getPartitions().isEmpty()) {

@@ -25,7 +25,7 @@ import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.j_spaces.core.admin.IRemoteJSpaceAdmin;
 import com.j_spaces.core.admin.SpaceRuntimeInfo;
 
-public class SpaceClassExportTask implements DistributedTask<SerialList, List<String>>, ClusterInfoAware {
+public class ExportImportTask implements DistributedTask<SerialList, List<String>>, ClusterInfoAware {
 	
 	private static final long serialVersionUID = 5257838144063003892L;
 	/**
@@ -64,7 +64,7 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
     	public String getValue() { return value; }
     }
 
-	public SpaceClassExportTask(InputParameters config) {
+	public ExportImportTask(InputParameters config) {
         this.export = config.getExport();
         this.classNames.addAll(config.getClasses());
         this.batch = config.getBatch();
