@@ -1,6 +1,5 @@
 package com.gigaspaces.tools.importexport;
 
-import com.gigaspaces.logger.Constants;
 import com.gigaspaces.metadata.SpaceTypeDescriptorBuilder;
 import com.gigaspaces.metadata.index.SpaceIndex;
 import com.gigaspaces.metadata.index.SpaceIndexFactory;
@@ -17,24 +16,13 @@ import java.util.zip.GZIPInputStream;
 
 import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
-public class SpaceClassImportThread implements Runnable {
-
-    private final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
-
-    private GigaSpace space;
-    private File file;
-    private Integer batch = 1000;
-    private SerialAudit audit;
+public class SpaceClassImportThread extends AbstractSpaceThread implements Runnable {
 
     public SpaceClassImportThread(GigaSpace space, File file, Integer batch) {
         this.space = space;
         this.file = file;
         this.batch = batch;
-        this.audit = new SerialAudit();
-    }
-
-    public SerialAudit getMessage() {
-        return audit;
+        this.lines = new SerialAudit();
     }
 
     @Override
@@ -141,13 +129,5 @@ public class SpaceClassImportThread implements Runnable {
         return space.getTypeManager().getTypeDescriptor(typeName) != null;
     }
 
-    private void logInfoMessage(String message){
-        logger.info(message);
-        audit.add(message);
-    }
 
-    private void logFineMessage(String message){
-        logger.fine(message);
-        audit.add(message);
-    }
 }

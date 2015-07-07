@@ -3,7 +3,6 @@ package com.gigaspaces.tools.importexport;
 import com.gigaspaces.client.iterator.GSIteratorConfig;
 import com.gigaspaces.client.iterator.IteratorScope;
 import com.gigaspaces.document.SpaceDocument;
-import com.gigaspaces.logger.Constants;
 import com.gigaspaces.metadata.SpaceTypeDescriptor;
 import com.gigaspaces.metadata.index.SpaceIndex;
 import com.gigaspaces.tools.importexport.serial.SerialAudit;
@@ -20,15 +19,9 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
-public class SpaceClassExportThread implements Runnable {
+public class SpaceClassExportThread extends AbstractSpaceThread implements Runnable {
 
-    private final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
-
-    private GigaSpace space;
-    private File file;
     private String className;
-    private Integer batch = 1000;
-    private SerialAudit lines;
 
     public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch) {
         this.space = space;
@@ -38,13 +31,7 @@ public class SpaceClassExportThread implements Runnable {
         this.lines = new SerialAudit();
     }
 
-    public SerialAudit getMessage() {
-
-        return lines;
-    }
-
     private Object getClassTemplate(String className) {
-
         Object template = null;
         try {
             template = Class.forName(className).newInstance();
@@ -65,9 +52,7 @@ public class SpaceClassExportThread implements Runnable {
     }
 
     private SerialMap getTypeDescriptorMap(String className) {
-
         SerialMap documentMap = new SerialMap();
-
         SpaceTypeDescriptor type = space.getTypeManager().getTypeDescriptor(className);
 
         if (type.getIdPropertyName() != null)
@@ -107,18 +92,18 @@ public class SpaceClassExportThread implements Runnable {
             Object template = getClassTemplate(className);
             if (template != null) {
                 String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
-                logMessage("reading space " + type + " : " + className);
+                logInfoMessage("reading space " + type + " : " + className);
                 Integer count = space.count(template);
 
                 if (count > 0) {
-                    logMessage("space partition contains " + count + " objects");
+                    logInfoMessage("space partition contains " + count + " objects");
                     lines.add("space partition contains " + count + " objects");
 
                     // create the output file stream
                     zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
                     oos = new ObjectOutputStream(zos);
 
-                    logMessage("writing to file : " + file.getAbsolutePath());
+                    logInfoMessage("writing to file : " + file.getAbsolutePath());
                     // write some header data
                     oos.writeUTF(SpaceDocument.class.isInstance(template) ? DOCUMENT : className);
                     oos.writeInt(count);
@@ -138,15 +123,15 @@ public class SpaceClassExportThread implements Runnable {
 
                     try {
                         iterator = new GSIterator(space.getSpace(), templates, config);
-                        logMessage("read " + count + " objects from space partition");
+                        logInfoMessage("read " + count + " objects from space partition");
                         Long start = System.currentTimeMillis();
                         while (iterator.hasNext()) {
                             oos.writeObject(iterator.next());
                         }
                         Long duration = (System.currentTimeMillis() - start);
-                        logMessage("export operation took " + duration + " millis");
+                        logInfoMessage("export operation took " + duration + " millis");
                     } catch (Exception e) {
-                        logMessage("import exception = " + e);
+                        logInfoMessage("import exception = " + e);
                         e.printStackTrace();
                     }
 
@@ -162,11 +147,6 @@ public class SpaceClassExportThread implements Runnable {
                 e.printStackTrace();
             }
         }
-    }
-
-    private void logMessage(String message){
-        logger.info(message);
-        lines.add(message);
     }
 
 }

@@ -85,6 +85,25 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		return audit;
 	}
 
+    /* (non-Javadoc)
+     * @see com.gigaspaces. {
+     * async.AsyncResultsReducer#reduce(java.util.List)
+     */
+    @Override
+    public List<String> reduce(List<AsyncResult<SerialList>> args) throws Exception {
+        List<String> result = new ArrayList<>();
+        for (AsyncResult<SerialList> arg : args) {
+            if (arg.getException() == null && arg.getResult() != null) {
+                for (String str : arg.getResult())
+                    result.add(str);
+            }   else {
+                result.add("exception:" + arg.getException().getMessage());
+                arg.getException().printStackTrace();
+            }
+        }
+        return result;
+    }
+
     private void handleImport() {
         File[] files = new File(storagePath).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
         List<String> fileNames = new ArrayList<>();
@@ -139,28 +158,8 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		}
 		return buffer.toString();
 	}
-	
-	/* (non-Javadoc)
-	 * @see com.gigaspaces. {
-	 * async.AsyncResultsReducer#reduce(java.util.List)
-	 */
-	@Override
-	public List<String> reduce(List<AsyncResult<SerialList>> args) throws Exception {
-		List<String> result = new ArrayList<String>();
-		for (AsyncResult<SerialList> arg : args) {
-			if (arg.getException() == null && arg.getResult() != null) {
-                for (String str : arg.getResult())
-                    result.add(str);
-			}   else {
-				result.add("exception:" + arg.getException().getMessage());
-				arg.getException().printStackTrace();
-			}
-		}
-		return result;
-	}
 
 	private void writeObjects(List<String> classList) {
-
         ExecutorService executor = Executors.newFixedThreadPool(classList.size());
 		List<SpaceClassExportThread> threadList = new ArrayList<SpaceClassExportThread>();
 		Integer partitionId = clusterInfo.getInstanceId();
@@ -174,11 +173,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		}
         logMessage("waiting for " + classList.size() + " import operations to complete-complete");
         waitForExecution(executor);
-		for (SpaceClassExportThread thread : threadList) {
-			for (String line : thread.getMessage()){
-                (audit).add(line);
-            }
-		}
+		collectResults(threadList);
 		logMessage("finished writing " + classList.size() + " classes");
 	}
 
@@ -196,13 +191,17 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		}
 		logMessage("waiting for " + fileNames.size() + " import operations to complete");
         waitForExecution(executor);
-		for (SpaceClassImportThread thread : threadList) {
-			for (String line : thread.getMessage()) {
-				audit.add(line, false);
-			}
-		}
-		logMessage("finished reading " + fileNames.size() + " files");
+        collectResults(threadList);
+        logMessage("finished reading " + fileNames.size() + " files");
 	}
+
+    private void collectResults(List<? extends AbstractSpaceThread> threadList) {
+            for (AbstractSpaceThread thread : threadList) {
+                for (String line : thread.getMessage()) {
+                    audit.add(line);
+                }
+            }
+    }
 
     private void waitForExecution(ExecutorService executor) {
         executor.shutdown();
