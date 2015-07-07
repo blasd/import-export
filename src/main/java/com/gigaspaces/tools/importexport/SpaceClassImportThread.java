@@ -58,7 +58,7 @@ public class SpaceClassImportThread implements Runnable {
             for (int i = 0; i < objectCount; i++) {
                 objectList.add(input.readObject());
                 if (i > 0 && (i % batch == 0 || i + 1 == objectCount)) {
-                    space.writeMultiple(objectList.toArray(new Object[batch]));
+                    space.writeMultiple(objectList.toArray(new Object[objectList.size()]));
                     if (i + 1 < objectCount) {
                         objectList.clear();
                     }

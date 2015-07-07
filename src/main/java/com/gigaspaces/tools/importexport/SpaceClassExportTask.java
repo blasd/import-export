@@ -2,6 +2,7 @@ package com.gigaspaces.tools.importexport;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -43,10 +44,10 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 		
 	private final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
 	
-	private List<String> classNames;
+	private List<String> classNames = new ArrayList<>();
 	private Boolean export;
 	private Integer batch;
-	private SerialAudit audit;
+	private SerialAudit audit = new SerialAudit();
 	
 	// we don't really use this other than to get the groups and locators
 	@TaskGigaSpace
@@ -62,28 +63,11 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
     	private Type(String value) { this.value = value; }
     	public String getValue() { return value; }
     }
-    
-	public SpaceClassExportTask() {
-		classNames = new ArrayList<String>();
-		audit = new SerialAudit();
-	}
-	
-	public SpaceClassExportTask(Boolean export) {
-
-		this();
-		this.export = export;
-	}
 
 	public SpaceClassExportTask(InputParameters config) {
-		this(config.getClasses(), config.getExport(), config.getBatch());
-	}
-	
-
-	public SpaceClassExportTask(List<String> className, Boolean export, Integer batch) {
-
-		this(export);
-		this.classNames.addAll(classNames);
-		this.batch = batch;
+        this.export = config.getExport();
+        this.classNames.addAll(config.getClasses());
+        this.batch = config.getBatch();
 	}
 
 	/* (non-Javadoc)
@@ -91,67 +75,60 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 	 */
 	@Override
 	public SerialList execute() throws Exception {
-
-		// writes the partition id with the thread id in the logs
-//		audit.setPartition(clusterInfo.getInstanceId());
-		
 		if (export) {
-			// get a list of classes and the number of entries of each class
-			IRemoteJSpaceAdmin remoteAdmin = (IRemoteJSpaceAdmin) gigaSpace.getSpace().getAdmin();
-			if (! classNames.isEmpty()) {
-				for (String className : classNames) {
-					SpaceRuntimeInfo runtimeInfo = remoteAdmin.getRuntimeInfo(className);
-					if (runtimeInfo != null) {
-						if (logger.isLoggable(Level.FINE)) {
-							List<?> numOfEntries = runtimeInfo.m_NumOFEntries;
-							for (int c = 0; c < runtimeInfo.m_ClassNames.size(); c++) 
-								logger.fine(runtimeInfo.m_ClassNames.get(c) + " has " + numOfEntries.get(c).toString() + " objects"); 
-						}
-					}
-					else {
-						classNames.remove(className);
-						logger.warning("space class export task - class: " + className + " was not found!");
-					}
-				}
-				logMessage("confirmed " + classNames.size() + " classes");
-			}
-			else {
-				Object classList[] = remoteAdmin.getRuntimeInfo().m_ClassNames.toArray();
-				if (logger.isLoggable(Level.FINE)) {
-					List<?> numOfEntries = remoteAdmin.getRuntimeInfo().m_NumOFEntries;
-					for (int c = 0; c < classList.length; c++) 
-						logger.fine(classList[c] + " has " + numOfEntries.get(c).toString() + " objects"); 
-				}
-				for (Object clazz : classList) {
-					logger.fine(clazz.toString());
-					if (! clazz.toString().equals(OBJECT)) classNames.add(clazz.toString());
-				}
-				logMessage("found " + classNames.size() + " classes");
-			}
-			
-			if (classNames.size() > 0)
-				writeObjects(classNames);
+            handleExport();
 		}   else {
-			File[] files = new File(DOT).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
-			List<String> fileNames = new ArrayList<String>();
-			for (File file : files) {
-				if (! classNames.isEmpty()) {
-					// remove elements from the file list
-					if (classNames.contains(getClassNameFromImportFile(file)))
-						fileNames.add(file.toString());
-				}
-				else fileNames.add(file.toString());
-			}
-
-			logMessage("importer found " + fileNames.size() + " files");
-			if (fileNames.size() > 0)
-				readObjects(fileNames);
+            handleImport();
 		}
 		return audit;
 	}
-	
-	private String getClassNameFromImportFile(File file) {
-		
+
+    private void handleImport() {
+        File[] files = new File(DOT).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
+        List<String> fileNames = new ArrayList<>();
+        for (File file : files) {
+            if (classNames.isEmpty() || classNames.contains(getClassNameFromImportFile(file))) {
+                fileNames.add(file.toString());
+            }
+        }
+        logMessage("importer found " + fileNames.size() + " files");
+        if (fileNames.size() > 0){
+            readObjects(fileNames);
+        }
+    }
+
+    private void handleExport() throws RemoteException {
+        IRemoteJSpaceAdmin remoteAdmin = (IRemoteJSpaceAdmin) gigaSpace.getSpace().getAdmin();
+        if (! classNames.isEmpty()) {
+            for (String className : classNames) {
+                SpaceRuntimeInfo runtimeInfo = remoteAdmin.getRuntimeInfo(className);
+                if (runtimeInfo != null) {
+                    logClassInstancesCount(runtimeInfo);
+                }
+                else {
+                    classNames.remove(className);
+                    logger.warning("space class export task - class: " + className + " was not found!");
+                }
+            }
+            logMessage("confirmed " + classNames.size() + " classes");
+        }   else {
+            Object classList[] = remoteAdmin.getRuntimeInfo().m_ClassNames.toArray();
+            logClassInstancesCount(remoteAdmin, classList);
+            for (Object clazz : classList) {
+                logger.fine(clazz.toString());
+                if (! clazz.toString().equals(OBJECT)){
+                    classNames.add(clazz.toString());
+                }
+            }
+            logMessage("found " + classNames.size() + " classes");
+        }
+
+        if (classNames.size() > 0){
+            writeObjects(classNames);
+        }
+    }
+
+    private String getClassNameFromImportFile(File file) {
 		StringBuilder buffer = new StringBuilder();
 		String[] parts = file.getName().split("\\.");
 		// class.name.#.ser.gz - we don't care about the last three
@@ -181,84 +158,70 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
 	}
 
 	private void writeObjects(List<String> classList) {
-		
-		writeObjects(gigaSpace, clusterInfo, classList);
-	}
-
-	private void writeObjects(GigaSpace space, ClusterInfo clusterInfo, List<String> classList) {
 
         ExecutorService executor = Executors.newFixedThreadPool(classList.size());
 		List<SpaceClassExportThread> threadList = new ArrayList<SpaceClassExportThread>();
 		Integer partitionId = clusterInfo.getInstanceId();
 		for (String className : classList) {
 			File file = new File(className + DOT + partitionId + SUFFIX);
-			SpaceClassExportThread operation = new SpaceClassExportThread(space, file, className, batch);
+            logMessage("starting export TO FILE " + file.getAbsolutePath());
+            SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch);
 			logMessage("starting export thread for " + className);
             executor.submit(operation);
 			threadList.add(operation);
 		}
-
         logMessage("waiting for " + classList.size() + " import operations to complete-complete");
-        executor.shutdown();
-        while (!executor.isTerminated()){
-
-        }
-        logMessage("waiting for " + classList.size() + " import operations to COMPLETED");
+        waitForExecution(executor);
 		for (SpaceClassExportThread thread : threadList) {
-			for (String line : thread.getMessage())
-				(audit).add(line);
+			for (String line : thread.getMessage()){
+                (audit).add(line);
+            }
 		}
 		logMessage("finished writing " + classList.size() + " classes");
 	}
 
-	private void readObjects(List<String> classList) {
-		
-		readObjects(gigaSpace, clusterInfo, classList);
-	}
-	
-	private void readObjects(GigaSpace space, ClusterInfo clusterInfo, List<String> classList) {
-		
+	private void readObjects(List<String> fileNames) {
 		List<SpaceClassImportThread> threadList = new ArrayList<SpaceClassImportThread>();
-
 		Integer partitionId = clusterInfo.getInstanceId();
-
-        ExecutorService executor = Executors.newFixedThreadPool(classList.size());
-
-		for (String className : classList) {
+        ExecutorService executor = Executors.newFixedThreadPool(fileNames.size());
+		for (String fileName : fileNames) {
 			// we're being passed a file instead of a class name
-			File file = new File(className);
+			File file = new File(fileName);
 			logMessage("importing class " + getClassNameFromImportFile(file) + " into partition " + partitionId);
-			SpaceClassImportThread operation = new SpaceClassImportThread(space, file, 1000);
+			SpaceClassImportThread operation = new SpaceClassImportThread(gigaSpace, file, 1000);
 			threadList.add(operation);
             executor.submit(operation);
 		}
-		logMessage("waiting for " + classList.size() + " import operations to complete");
-        executor.shutdown();
-        while (!executor.isTerminated()){
-
-        }
+		logMessage("waiting for " + fileNames.size() + " import operations to complete");
+        waitForExecution(executor);
 		for (SpaceClassImportThread thread : threadList) {
 			for (String line : thread.getMessage()) {
 				audit.add(line, false);
 			}
 		}
-		logMessage("finished reading " + classList.size() + " files");
+		logMessage("finished reading " + fileNames.size() + " files");
 	}
 
-	private class ImportClassFileFilter implements FilenameFilter {
+    private void waitForExecution(ExecutorService executor) {
+        executor.shutdown();
+        while (!executor.isTerminated()){}
+    }
 
-		private Integer partitionId;
-		
-		public ImportClassFileFilter(Integer partitionId) { 
-			
-			this.partitionId = partitionId;
-		}
-		
-		@Override
-		public boolean accept(File dir, String name) {
-            return name.endsWith(partitionId + SUFFIX);
+    private void logClassInstancesCount(IRemoteJSpaceAdmin remoteAdmin, Object[] classList) throws RemoteException {
+        if (logger.isLoggable(Level.FINE)) {
+            List<?> numOfEntries = remoteAdmin.getRuntimeInfo().m_NumOFEntries;
+            for (int c = 0; c < classList.length; c++)
+                logger.fine(classList[c] + " has " + numOfEntries.get(c).toString() + " objects");
         }
-	}
+    }
+
+    private void logClassInstancesCount(SpaceRuntimeInfo runtimeInfo) {
+        if (logger.isLoggable(Level.FINE)) {
+            List<?> numOfEntries = runtimeInfo.m_NumOFEntries;
+            for (int c = 0; c < runtimeInfo.m_ClassNames.size(); c++)
+                logger.fine(runtimeInfo.m_ClassNames.get(c) + " has " + numOfEntries.get(c).toString() + " objects");
+        }
+    }
 
 	@Override
 	public void setClusterInfo(ClusterInfo clusterInfo) {
@@ -268,6 +231,21 @@ public class SpaceClassExportTask implements DistributedTask<SerialList, List<St
     private void logMessage(String message){
         logger.info(message);
         audit.add(message);
+    }
+
+    private class ImportClassFileFilter implements FilenameFilter {
+
+        private Integer partitionId;
+
+        public ImportClassFileFilter(Integer partitionId) {
+
+            this.partitionId = partitionId;
+        }
+
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.endsWith(partitionId + SUFFIX);
+        }
     }
 
 }
