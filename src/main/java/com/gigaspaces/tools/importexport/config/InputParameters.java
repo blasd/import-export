@@ -8,31 +8,34 @@ import java.util.List;
 
 public class InputParameters {
 
-    @Parameter(names = {"-s", "--space"}, description = "the name of the space")
+    @Parameter(names = {"-s", "--space"}, description = "The name of the space")
     private String name = "space";
 
-    @Parameter(names = {"-e", "--export"}, description = "performs space class export")
+    @Parameter(names = {"-e", "--export"}, description = "Performs space class export")
     private Boolean export = false;
 
-    @Parameter(names = {"-i", "--import"}, description = "performs space class import")
+    @Parameter(names = {"-i", "--import"}, description = "Performs space class import")
     private Boolean imp = true;
 
-    @Parameter(names = {"-t", "--test"}, description = "performs space class import")
+    @Parameter(names = {"-t", "--test"}, description = "Performs space class import")
     private Boolean test = false;
 
-    @Parameter(names = {"-b", "--batch"}, description = "performs a sanity check")
+    @Parameter(names = {"-b", "--batch"}, description = "Performs a sanity check")
     private Integer batch = 1000;
 
-    @Parameter(names = {"-l", "--locators"}, description = "the names of lookup services hosts - comma separated", splitter = CommaParameterSplitter.class)
+    @Parameter(names = {"-d", "--directory"}, description = "Read-from/write-to directory", required = true)
+    private String directory;
+
+    @Parameter(names = {"-l", "--locators"}, description = "The names of lookup services hosts - comma separated", splitter = CommaParameterSplitter.class)
     private List<String> locators = new ArrayList<String>();
 
-    @Parameter(names = {"-g", "--groups"}, description = "the names of lookup groups - comma separated")
+    @Parameter(names = {"-g", "--groups"}, description = "The names of lookup groups - comma separated")
     private List<String> groups = new ArrayList<String>();
 
-    @Parameter(names = {"-c", "--classes"}, description = "the classes whose objects to import/export - comma separated")
+    @Parameter(names = {"-c", "--classes"}, description = "The classes whose objects to import/export - comma separated")
     private List<String> classes = new ArrayList<String>();
 
-    @Parameter(names = {"-p", "--partitions"}, description = "the partition(s) to restore - comma separated")
+    @Parameter(names = {"-p", "--partitions"}, description = "The partition(s) to restore - comma separated")
     private List<Integer> partitions = new ArrayList<Integer>();
 
     @Parameter(names = {"-u", "--username"}, description = "The username when connecting to a secured space.")
@@ -79,6 +82,14 @@ public class InputParameters {
 
     public void setBatch(Integer batch) {
         this.batch = batch;
+    }
+
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(String directory) {
+        this.directory = directory;
     }
 
     public List<String> getLocators() {

@@ -48,7 +48,8 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 	private Boolean export;
 	private Integer batch;
 	private SerialAudit audit = new SerialAudit();
-	
+	private String storagePath;
+
 	// we don't really use this other than to get the groups and locators
 	@TaskGigaSpace
 	private transient GigaSpace gigaSpace;
@@ -68,6 +69,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
         this.export = config.getExport();
         this.classNames.addAll(config.getClasses());
         this.batch = config.getBatch();
+        this.storagePath = config.getDirectory();
 	}
 
 	/* (non-Javadoc)
@@ -84,7 +86,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 	}
 
     private void handleImport() {
-        File[] files = new File(DOT).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
+        File[] files = new File(storagePath).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
         List<String> fileNames = new ArrayList<>();
         for (File file : files) {
             if (classNames.isEmpty() || classNames.contains(getClassNameFromImportFile(file))) {
@@ -163,7 +165,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		List<SpaceClassExportThread> threadList = new ArrayList<SpaceClassExportThread>();
 		Integer partitionId = clusterInfo.getInstanceId();
 		for (String className : classList) {
-			File file = new File(className + DOT + partitionId + SUFFIX);
+			File file = new File(storagePath + File.separator + className + DOT + partitionId + SUFFIX);
             logMessage("starting export TO FILE " + file.getAbsolutePath());
             SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch);
 			logMessage("starting export thread for " + className);
