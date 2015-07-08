@@ -1,6 +1,3 @@
-/**
- * Aug 1, 2013
- */
 package com.gigaspaces.tools.importexport;
 
 import java.util.List;

@@ -4,9 +4,9 @@ import com.gigaspaces.metadata.SpaceTypeDescriptorBuilder;
 import com.gigaspaces.metadata.index.SpaceIndex;
 import com.gigaspaces.metadata.index.SpaceIndexFactory;
 import com.gigaspaces.metadata.index.SpaceIndexType;
-import com.gigaspaces.tools.importexport.serial.SerialAudit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
+import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
 import org.openspaces.core.GigaSpace;
 
 import java.io.*;
@@ -16,21 +16,19 @@ import java.util.zip.GZIPInputStream;
 
 import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
-public class SpaceClassImportThread extends AbstractSpaceThread implements Runnable {
+public class SpaceClassImportThread extends AbstractSpaceThread{
 
     public SpaceClassImportThread(GigaSpace space, File file, Integer batch) {
         this.space = space;
         this.file = file;
         this.batch = batch;
-        this.lines = new SerialAudit();
     }
 
     @Override
-    public void run() {
-        ObjectInputStream input = null;
-        try {
-            GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(file)));
-            input = new ObjectInputStream(zis);
+    protected ThreadExecutionResult performOperation() throws Exception {
+        try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(file)));
+             ObjectInputStream input = new ObjectInputStream(zis)){
+
             logInfoMessage("opened import file " + file.toString());
             String className = input.readUTF();
             Integer objectCount = input.readInt();
@@ -54,16 +52,7 @@ public class SpaceClassImportThread extends AbstractSpaceThread implements Runna
             }
             Long duration = (System.currentTimeMillis() - start);
             logInfoMessage("import operation took " + duration + " millis");
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (input != null){
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            return result;
         }
     }
 
@@ -128,6 +117,5 @@ public class SpaceClassImportThread extends AbstractSpaceThread implements Runna
     private boolean typeAlreadyRegistered(String typeName) {
         return space.getTypeManager().getTypeDescriptor(typeName) != null;
     }
-
 
 }

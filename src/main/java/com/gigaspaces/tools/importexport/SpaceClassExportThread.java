@@ -5,9 +5,9 @@ import com.gigaspaces.client.iterator.IteratorScope;
 import com.gigaspaces.document.SpaceDocument;
 import com.gigaspaces.metadata.SpaceTypeDescriptor;
 import com.gigaspaces.metadata.index.SpaceIndex;
-import com.gigaspaces.tools.importexport.serial.SerialAudit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
+import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
 import com.j_spaces.core.client.GSIterator;
 import org.openspaces.core.GigaSpace;
 
@@ -19,7 +19,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
-public class SpaceClassExportThread extends AbstractSpaceThread implements Runnable {
+public class SpaceClassExportThread extends AbstractSpaceThread{
 
     private String className;
 
@@ -28,7 +28,51 @@ public class SpaceClassExportThread extends AbstractSpaceThread implements Runna
         this.file = file;
         this.className = className;
         this.batch = batch;
-        this.lines = new SerialAudit();
+    }
+
+    @Override
+    protected ThreadExecutionResult performOperation() throws Exception{
+        try (GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+             ObjectOutputStream oos = new ObjectOutputStream(zos)){
+
+            Object template = getClassTemplate(className);
+            if (template != null) {
+                String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
+                logInfoMessage("reading space " + type + " : " + className);
+                Integer count = space.count(template);
+
+                if (count > 0) {
+                    logInfoMessage("space partition contains " + count + " objects");
+                    logInfoMessage("writing to file : " + file.getAbsolutePath());
+                    // write some header data
+                    oos.writeUTF(SpaceDocument.class.isInstance(template) ? DOCUMENT : className);
+                    oos.writeInt(count);
+                    // space document needs to write type descriptor
+                    if (Type.DOC.getValue().equals(type))
+                        oos.writeUTF(className);
+
+                    // we could serialize *all* type descriptors
+                    oos.writeObject(getTypeDescriptorMap(className));
+
+                    // get the objects and write them out
+                    GSIteratorConfig config = new GSIteratorConfig();
+                    config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
+                    Collection<Object> templates = new LinkedList<Object>();
+                    templates.add(template);
+                    GSIterator iterator = new GSIterator(space.getSpace(), templates, config);
+                    logInfoMessage("read " + count + " objects from space partition");
+                    Long start = System.currentTimeMillis();
+                    while (iterator.hasNext()) {
+                        oos.writeObject(iterator.next());
+                    }
+                    Long duration = (System.currentTimeMillis() - start);
+                    logInfoMessage("export operation took " + duration + " millis");
+
+
+                }
+            }
+            return result;
+        }
     }
 
     private Object getClassTemplate(String className) {
@@ -81,72 +125,6 @@ public class SpaceClassExportThread extends AbstractSpaceThread implements Runna
         documentMap.put(INDEX, indexMap);
 
         return documentMap;
-    }
-
-    @Override
-    public void run() {
-
-        GZIPOutputStream zos = null;
-        ObjectOutputStream oos = null;
-        try {
-            Object template = getClassTemplate(className);
-            if (template != null) {
-                String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
-                logInfoMessage("reading space " + type + " : " + className);
-                Integer count = space.count(template);
-
-                if (count > 0) {
-                    logInfoMessage("space partition contains " + count + " objects");
-                    lines.add("space partition contains " + count + " objects");
-
-                    // create the output file stream
-                    zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-                    oos = new ObjectOutputStream(zos);
-
-                    logInfoMessage("writing to file : " + file.getAbsolutePath());
-                    // write some header data
-                    oos.writeUTF(SpaceDocument.class.isInstance(template) ? DOCUMENT : className);
-                    oos.writeInt(count);
-                    // space document needs to write type descriptor
-                    if (Type.DOC.getValue().equals(type))
-                        oos.writeUTF(className);
-
-                    // we could serialize *all* type descriptors
-                    oos.writeObject(getTypeDescriptorMap(className));
-
-                    // get the objects and write them out
-                    GSIteratorConfig config = new GSIteratorConfig();
-                    config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
-                    Collection<Object> templates = new LinkedList<Object>();
-                    templates.add(template);
-                    GSIterator iterator = null;
-
-                    try {
-                        iterator = new GSIterator(space.getSpace(), templates, config);
-                        logInfoMessage("read " + count + " objects from space partition");
-                        Long start = System.currentTimeMillis();
-                        while (iterator.hasNext()) {
-                            oos.writeObject(iterator.next());
-                        }
-                        Long duration = (System.currentTimeMillis() - start);
-                        logInfoMessage("export operation took " + duration + " millis");
-                    } catch (Exception e) {
-                        logInfoMessage("import exception = " + e);
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }   finally {
-            try {
-                zos.finish();
-                oos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }

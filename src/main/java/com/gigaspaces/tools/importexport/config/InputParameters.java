@@ -3,10 +3,11 @@ package com.gigaspaces.tools.importexport.config;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.converters.CommaParameterSplitter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InputParameters {
+public class InputParameters implements Serializable{
 
     @Parameter(names = {"-s", "--space"}, description = "The name of the space")
     private String name = "space";
