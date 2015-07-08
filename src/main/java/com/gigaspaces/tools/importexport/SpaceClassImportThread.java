@@ -4,9 +4,9 @@ import com.gigaspaces.metadata.SpaceTypeDescriptorBuilder;
 import com.gigaspaces.metadata.index.SpaceIndex;
 import com.gigaspaces.metadata.index.SpaceIndexFactory;
 import com.gigaspaces.metadata.index.SpaceIndexType;
+import com.gigaspaces.tools.importexport.serial.Audit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
-import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
 import org.openspaces.core.GigaSpace;
 
 import java.io.*;
@@ -25,7 +25,7 @@ public class SpaceClassImportThread extends AbstractSpaceThread{
     }
 
     @Override
-    protected ThreadExecutionResult performOperation() throws Exception {
+    protected Audit performOperation() throws Exception {
         try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(file)));
              ObjectInputStream input = new ObjectInputStream(zis)){
 

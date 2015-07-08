@@ -5,9 +5,9 @@ import com.gigaspaces.client.iterator.IteratorScope;
 import com.gigaspaces.document.SpaceDocument;
 import com.gigaspaces.metadata.SpaceTypeDescriptor;
 import com.gigaspaces.metadata.index.SpaceIndex;
+import com.gigaspaces.tools.importexport.serial.Audit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
-import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
 import com.j_spaces.core.client.GSIterator;
 import org.openspaces.core.GigaSpace;
 
@@ -31,7 +31,7 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
     }
 
     @Override
-    protected ThreadExecutionResult performOperation() throws Exception{
+    protected Audit performOperation() throws Exception{
         try (GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
              ObjectOutputStream oos = new ObjectOutputStream(zos)){
 

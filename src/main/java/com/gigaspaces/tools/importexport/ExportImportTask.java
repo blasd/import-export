@@ -10,7 +10,6 @@ import java.util.logging.Level;
 
 import com.gigaspaces.tools.importexport.config.InputParameters;
 
-import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.AdminFactory;
 import org.openspaces.admin.gsc.GridServiceContainer;
@@ -25,7 +24,7 @@ import org.openspaces.core.executor.TaskGigaSpace;
 import com.gigaspaces.async.AsyncResult;
 import com.gigaspaces.document.SpaceDocument;
 import com.gigaspaces.logger.Constants;
-import com.gigaspaces.tools.importexport.serial.SerialAudit;
+import com.gigaspaces.tools.importexport.serial.Audit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.j_spaces.core.admin.IRemoteJSpaceAdmin;
 import com.j_spaces.core.admin.SpaceRuntimeInfo;
@@ -51,7 +50,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 	private List<String> classNames = new ArrayList<>();
 	private Boolean export;
 	private Integer batch;
-	private SerialAudit audit = new SerialAudit();
+	private Audit audit = new Audit();
 	private String storagePath;
     private InputParameters config;
 
@@ -188,7 +187,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
     private void writeObjects(List<String> classList) {
         ExecutorService executor = Executors.newFixedThreadPool(classList.size());
         Integer partitionId = clusterInfo.getInstanceId();
-        List<Callable<ThreadExecutionResult>> threads = new ArrayList<>();
+        List<Callable<Audit>> threads = new ArrayList<>();
         for (String className : classList) {
             File file = new File(storagePath + File.separator + className + DOT + partitionId + SUFFIX);
             logMessage("starting export TO FILE " + file.getAbsolutePath());
@@ -196,12 +195,12 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             logMessage("starting export thread for " + className);
             threads.add(operation);
         }
-        executeOperation(executor, threads);
+        executeTasks(executor, threads);
         logMessage("finished writing " + classList.size() + " classes");
     }
 
     private void readObjects(List<String> fileNames) {
-		List<Callable<ThreadExecutionResult>> threadList = new ArrayList<>();
+		List<Callable<Audit>> threadList = new ArrayList<>();
 		Integer partitionId = clusterInfo.getInstanceId();
         ExecutorService executor = Executors.newFixedThreadPool(fileNames.size());
 		for (String fileName : fileNames) {
@@ -210,52 +209,57 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 			SpaceClassImportThread operation = new SpaceClassImportThread(gigaSpace, file, 1000);
 			threadList.add(operation);
 		}
-		executeOperation(executor, threadList);
+		executeTasks(executor, threadList);
         logMessage("finished reading " + fileNames.size() + " files");
 	}
 
 
-    private void executeOperation(ExecutorService executor, List<Callable<ThreadExecutionResult>> threads) {
+    private void executeTasks(ExecutorService executor, List<Callable<Audit>> threads) {
         try {
-            List<Future<ThreadExecutionResult>> futures = executor.invokeAll(threads);
+            List<Future<Audit>> futures = executor.invokeAll(threads);
             logMessage("waiting for " + threads.size() + " import operations to complete-complete");
-            // waitForExecution(executor);
-            for (Future<ThreadExecutionResult> future : futures){
-                try {
-                    ThreadExecutionResult threadExecutionResult = future.get();
-                    audit.addAll(threadExecutionResult.getAudit());
-                }   catch (ExecutionException e) {
-                    logMessage("execution EXCEPTION " + e);
-                    Admin admin = initializeAdmin(config);
-                    admin.getSpaces().waitFor(gigaSpace.getName());
-                    ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
-                    GridServiceContainer gsc = findGSC(processingUnit);
-                    if (gsc != null){
-                        logMessage("HOSTNAME = " + gsc.getMachine().getHostName());
-                        logMessage("GSC UID = " + gsc.getUid());
-                        logMessage("PID = " + gsc.getVirtualMachine().getDetails().getPid());
-                    }   else {
-                        logMessage("UNABLE TO RETRIEVE GSC INFORMATION");
-                    }
-                    admin.close();
-                }
+            for (Future<Audit> future : futures){
+                handleThreadExecution(future);
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException | RemoteException e) {
+            logMessage("EXCEPTION OCCURED = " + e);
+        }
+    }
+
+    private void handleThreadExecution(Future<Audit> future) throws InterruptedException, RemoteException {
+        try {
+            Audit threadExecutionResult = future.get();
+            audit.addAll(threadExecutionResult);
+        }   catch (ExecutionException e) {
+            logMessage("EXECUTION EXCEPTION " + e.getCause());
+            Admin admin = initializeAdmin(config);
+            admin.getSpaces().waitFor(gigaSpace.getName());
+            ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
+            GridServiceContainer gsc = findGSC(processingUnit);
+            if (gsc != null){
+                logMessage("HOSTNAME = " + gsc.getMachine().getHostName());
+                logMessage("PID = " + gsc.getVirtualMachine().getDetails().getPid());
+            }   else {
+                logMessage("UNABLE TO RETRIEVE GSC INFORMATION");
+            }
+            logMessage("CONTAINER NAME = " + ((IRemoteJSpaceAdmin)gigaSpace.getSpace().getAdmin()).getConfig().getContainerName());
+            admin.close();
         }
     }
 
     private GridServiceContainer findGSC(ProcessingUnit pu) {
         ProcessingUnitInstance[] processingUnitInstances = pu.getInstances();
-        logMessage("PUI = " + processingUnitInstances.length);
         for (ProcessingUnitInstance pui : processingUnitInstances){
             ClusterInfo adminClusterInfo = pui.getClusterInfo();
-            logMessage("CLUSTER INFO = " + adminClusterInfo.getName() + " instance " + clusterInfo.getInstanceId());
-            if (clusterInfo.getName().equals(adminClusterInfo.getName()) && clusterInfo.getInstanceId().equals(adminClusterInfo.getInstanceId())){
+            if (sameNode(adminClusterInfo)){
                 return pui.getGridServiceContainer();
             }
         }
         return null;
+    }
+
+    private boolean sameNode(ClusterInfo adminClusterInfo) {
+        return clusterInfo.getName().equals(adminClusterInfo.getName()) && clusterInfo.getInstanceId().equals(adminClusterInfo.getInstanceId());
     }
 
     private void logClassInstancesCount(IRemoteJSpaceAdmin remoteAdmin, Object[] classList) throws RemoteException {

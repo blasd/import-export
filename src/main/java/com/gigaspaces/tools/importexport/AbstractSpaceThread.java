@@ -1,35 +1,35 @@
 package com.gigaspaces.tools.importexport;
 
 import com.gigaspaces.logger.Constants;
-import com.gigaspaces.tools.importexport.serial.ThreadExecutionResult;
+import com.gigaspaces.tools.importexport.serial.Audit;
 import org.openspaces.core.GigaSpace;
 
 import java.io.*;
 import java.util.concurrent.Callable;
 
 
-public abstract class AbstractSpaceThread implements Callable<ThreadExecutionResult> {
+public abstract class AbstractSpaceThread implements Callable<Audit> {
 
     protected final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
 
     protected GigaSpace space;
     protected File file;
     protected Integer batch = 1000;
-    protected ThreadExecutionResult result = new ThreadExecutionResult();
+    protected Audit result = new Audit();
 
     protected void logInfoMessage(String message){
         logger.info(message);
-        result.getAudit().add(message);
+        result.add(message);
     }
     protected void logFineMessage(String message){
         logger.fine(message);
-        result.getAudit().add(message);
+        result.add(message);
     }
 
     @Override
-    public ThreadExecutionResult call() throws Exception {
+    public Audit call() throws Exception {
         return performOperation();
     }
 
-    protected abstract ThreadExecutionResult performOperation() throws Exception;
+    protected abstract Audit performOperation() throws Exception;
 }
