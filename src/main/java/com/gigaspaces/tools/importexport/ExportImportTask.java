@@ -53,6 +53,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 	private Audit audit = new Audit();
 	private String storagePath;
     private InputParameters config;
+    private Admin admin;
 
 	// we don't really use this other than to get the groups and locators
 	@TaskGigaSpace
@@ -232,7 +233,9 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             audit.addAll(threadExecutionResult);
         }   catch (ExecutionException e) {
             logMessage("EXECUTION EXCEPTION " + e.getCause());
-            Admin admin = initializeAdmin(config);
+            if (admin == null){
+                admin = initializeAdmin(config);
+            }
             admin.getSpaces().waitFor(gigaSpace.getName());
             ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
             GridServiceContainer gsc = findGSC(processingUnit);
