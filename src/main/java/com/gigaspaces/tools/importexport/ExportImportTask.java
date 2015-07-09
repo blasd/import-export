@@ -10,6 +10,7 @@ import java.util.logging.Level;
 
 import com.gigaspaces.tools.importexport.config.InputParameters;
 
+import com.gigaspaces.tools.importexport.exception.ImportExportException;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.AdminFactory;
 import org.openspaces.admin.gsc.GridServiceContainer;
@@ -103,11 +104,29 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
      */
 	@Override
 	public SerialList execute() throws Exception {
-		if (export) {
-            handleExport();
-		}   else {
-            handleImport();
-		}
+		try {
+            if (export) {
+                handleExport();
+            }   else {
+                handleImport();
+            }
+        }   catch (ImportExportException e) {
+            String message = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
+            logMessage("EXECUTION EXCEPTION " + message);
+            if (admin == null){
+                admin = initializeAdmin(config);
+            }
+            admin.getSpaces().waitFor(gigaSpace.getName());
+            ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
+            GridServiceContainer gsc = findGSC(processingUnit);
+            if (gsc != null){
+                logMessage("HOSTNAME = " + gsc.getMachine().getHostName());
+                logMessage("PID = " + gsc.getVirtualMachine().getDetails().getPid());
+            }   else {
+                logMessage("UNABLE TO RETRIEVE GSC INFORMATION");
+            }
+            logMessage("CONTAINER NAME = " + ((IRemoteJSpaceAdmin)gigaSpace.getSpace().getAdmin()).getConfig().getContainerName());
+        }
 		return audit;
 	}
 
@@ -131,7 +150,11 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
     }
 
     private void handleImport() {
-        File[] files = new File(storagePath).listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
+        File directory = new File(storagePath);
+        if (!directory.exists() || !directory.isDirectory()){
+            throw new ImportExportException(storagePath + " doesn't exist or is not directory");
+        }
+        File[] files = directory.listFiles(new ImportClassFileFilter(clusterInfo.getInstanceId()));
         List<String> fileNames = new ArrayList<>();
         for (File file : files) {
             if (classNames.isEmpty() || classNames.contains(getClassNameFromImportFile(file))) {
@@ -223,7 +246,11 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
                 handleThreadExecution(future);
             }
         } catch (InterruptedException | RemoteException e) {
-            logMessage("EXCEPTION OCCURED = " + e);
+            throw  new ImportExportException(e);
+        }   finally {
+            if (admin != null){
+                admin.close();
+            }
         }
     }
 
@@ -232,21 +259,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             Audit threadExecutionResult = future.get();
             audit.addAll(threadExecutionResult);
         }   catch (ExecutionException e) {
-            logMessage("EXECUTION EXCEPTION " + e.getCause());
-            if (admin == null){
-                admin = initializeAdmin(config);
-            }
-            admin.getSpaces().waitFor(gigaSpace.getName());
-            ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
-            GridServiceContainer gsc = findGSC(processingUnit);
-            if (gsc != null){
-                logMessage("HOSTNAME = " + gsc.getMachine().getHostName());
-                logMessage("PID = " + gsc.getVirtualMachine().getDetails().getPid());
-            }   else {
-                logMessage("UNABLE TO RETRIEVE GSC INFORMATION");
-            }
-            logMessage("CONTAINER NAME = " + ((IRemoteJSpaceAdmin)gigaSpace.getSpace().getAdmin()).getConfig().getContainerName());
-            admin.close();
+            throw  new ImportExportException(e.getCause());
         }
     }
 
