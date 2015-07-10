@@ -1,6 +1,6 @@
 package com.gigaspaces.tool.importexport;
 
-import com.gigaspaces.tool.importexport.model.Person;
+import com.gigaspaces.tools.importexport.model.Person;
 import com.gigaspaces.tools.importexport.SpaceDataImportExportMain;
 import org.junit.After;
 import org.junit.Assert;
@@ -25,22 +25,24 @@ public class ImportExportTest {
     @Before
     public void init(){
         admin = new AdminFactory().addGroup("pavlo").create();
-        gigaSpace = startSpace();
+        gigaSpace = startSpace("mySpace", 4);
     }
 
     @Test
-    public void testExportImport(){
-        for (int i = 0; i < 100; i++){
+    public void testExportImport() throws InterruptedException {
+//        int count = 1000;
+        for (int i = 0; i < 1000; i++){
             gigaSpace.write(new Person(i, "name" + i, i + 1));
         }
         int count = countPersons();
         System.out.println("persons = " + count);
-        SpaceDataImportExportMain.main("-e -l 10.23.11.212 -s mySpace -g pavlo".split(" "));
+        SpaceDataImportExportMain.main("-e -l 10.23.11.212 -s mySpace -g pavlo -d /tmp/gs -n 3".split(" "));
         System.out.println("EXPORT COMPLETED");
-        undeploySpace();
-        gigaSpace = startSpace();
+        undeploySpace("mySpace");
+        Thread.sleep(5000);
+        gigaSpace = startSpace("mySpace1", 3);
         Assert.assertEquals("", 0, countPersons());
-        SpaceDataImportExportMain.main("-i -l 10.23.11.212 -s mySpace -g pavlo".split(" "));
+        SpaceDataImportExportMain.main("-i -l 10.23.11.212 -s mySpace1 -g pavlo -d /tmp/gs".split(" "));
         Assert.assertEquals("", count, countPersons());
         System.out.println("persons = " + countPersons());
     }
@@ -51,20 +53,20 @@ public class ImportExportTest {
 
     @After
     public void tearDown(){
-        undeploySpace();
+        undeploySpace("mySpace1");
     }
 
-    private void undeploySpace() {
-        admin.getProcessingUnits().getNames().get("mySpace").undeploy();
+    private void undeploySpace(String spaceName) {
+        admin.getProcessingUnits().getNames().get(spaceName).undeploy();
     }
 
-    private GigaSpace startSpace(){
+    private GigaSpace startSpace(String spaceName, Integer instances){
         gsms = admin.getGridServiceManagers();
         gsms.waitFor(1);
         ProcessingUnit processingUnit = gsms.
-                deploy(new SpaceDeployment("mySpace").numberOfInstances(1).numberOfBackups(1));
+                deploy(new SpaceDeployment(spaceName).numberOfInstances(instances).numberOfBackups(1));
         Space space = processingUnit.waitForSpace();
-        space.waitFor(2);
+        space.waitFor(instances);
         return space.getGigaSpace();
     }
 

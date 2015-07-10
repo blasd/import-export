@@ -45,6 +45,17 @@ public class InputParameters implements Serializable{
     @Parameter(names = {"-a", "--password"}, description = "The password when connecting to a secured space.")
     private String password;
 
+    @Parameter(names = {"-n", "--number"}, description = "Number of partitions to export.")
+    private Integer numberOfPartitions;
+
+    public Integer getNumberOfPartitions() {
+        return numberOfPartitions;
+    }
+
+    public void setNumberOfPartitions(Integer numberOfPartitions) {
+        this.numberOfPartitions = numberOfPartitions;
+    }
+
     public String getName() {
         return name;
     }

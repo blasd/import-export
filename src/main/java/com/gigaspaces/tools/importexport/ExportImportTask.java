@@ -111,8 +111,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
                 handleImport();
             }
         }   catch (ImportExportException e) {
-            String message = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
-            logMessage("EXECUTION EXCEPTION " + message);
+            logMessage("EXECUTION EXCEPTION " + e);
             if (admin == null){
                 admin = initializeAdmin(config);
             }
@@ -162,6 +161,9 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             }
         }
         logMessage("importer found " + fileNames.size() + " files");
+        for (String fileName : fileNames){
+            logMessage("FILE " + fileName);
+        }
         if (fileNames.size() > 0){
             readObjects(fileNames);
         }
@@ -202,7 +204,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 		StringBuilder buffer = new StringBuilder();
 		String[] parts = file.getName().split("\\.");
 		// class.name.#.ser.gz - we don't care about the last three
-		for (int f = 0; f < parts.length - 3; f++) {
+		for (int f = 0; f < parts.length - 4; f++) {
 			buffer.append((buffer.length() > 0 ? "." : "")).append(parts[f]);
 		}
 		return buffer.toString();
@@ -210,14 +212,16 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 
     private void writeObjects(List<String> classList) {
         ExecutorService executor = Executors.newFixedThreadPool(classList.size());
-        Integer partitionId = clusterInfo.getInstanceId();
+        Integer currentPartitionId = clusterInfo.getInstanceId();
         List<Callable<Audit>> threads = new ArrayList<>();
         for (String className : classList) {
-            File file = new File(storagePath + File.separator + className + DOT + partitionId + SUFFIX);
-            logMessage("starting export TO FILE " + file.getAbsolutePath());
-            SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch);
-            logMessage("starting export thread for " + className);
-            threads.add(operation);
+            for (int futurePartitionId = 1; futurePartitionId <= config.getNumberOfPartitions(); futurePartitionId++){
+                File file = new File(storagePath + File.separator + className + DOT + currentPartitionId + DOT + futurePartitionId + SUFFIX);
+                logMessage("starting export TO FILE " + file.getAbsolutePath());
+                SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, config.getNumberOfPartitions());
+                logMessage("starting export thread for " + className);
+                threads.add(operation);
+            }
         }
         executeTasks(executor, threads);
         logMessage("finished writing " + classList.size() + " classes");
@@ -259,7 +263,22 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             Audit threadExecutionResult = future.get();
             audit.addAll(threadExecutionResult);
         }   catch (ExecutionException e) {
-            throw  new ImportExportException(e.getCause());
+            //throw  new ImportExportException(e.getCause());
+            logMessage("EXECUTION EXCEPTION " + e);
+            logMessage("CAUSE EXCEPTION " + e.getCause().getMessage());
+            if (admin == null){
+                admin = initializeAdmin(config);
+            }
+            admin.getSpaces().waitFor(gigaSpace.getName());
+            ProcessingUnit processingUnit = admin.getProcessingUnits().waitFor(gigaSpace.getName());
+            GridServiceContainer gsc = findGSC(processingUnit);
+            if (gsc != null){
+                logMessage("HOSTNAME = " + gsc.getMachine().getHostName());
+                logMessage("PID = " + gsc.getVirtualMachine().getDetails().getPid());
+            }   else {
+                logMessage("UNABLE TO RETRIEVE GSC INFORMATION");
+            }
+            logMessage("CONTAINER NAME = " + ((IRemoteJSpaceAdmin)gigaSpace.getSpace().getAdmin()).getConfig().getContainerName());
         }
     }
 

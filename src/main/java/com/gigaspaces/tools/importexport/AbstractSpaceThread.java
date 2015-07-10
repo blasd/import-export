@@ -20,6 +20,7 @@ public abstract class AbstractSpaceThread implements Callable<Audit> {
     protected void logInfoMessage(String message){
         logger.info(message);
         result.add(message);
+        System.out.println("!!!!!!!!!!!!!!!! " + message);
     }
     protected void logFineMessage(String message){
         logger.fine(message);

@@ -9,9 +9,12 @@ import com.gigaspaces.tools.importexport.serial.Audit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
 import com.j_spaces.core.client.GSIterator;
+import net.jini.core.entry.UnusableEntryException;
 import org.openspaces.core.GigaSpace;
 
 import java.io.*;
+import java.lang.reflect.Field;
+import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -23,11 +26,17 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
 
     private String className;
 
-    public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch) {
+    private Integer futurePartitionId;
+
+    private Integer clusterSize;
+
+    public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch, Integer futurePartitionID, Integer clusterSize) {
         this.space = space;
         this.file = file;
         this.className = className;
+        this.futurePartitionId = futurePartitionID;
         this.batch = batch;
+        this.clusterSize = clusterSize;
     }
 
     @Override
@@ -39,8 +48,8 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
             if (template != null) {
                 String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
                 logInfoMessage("reading space " + type + " : " + className);
-                Integer count = space.count(template);
-
+                //Integer count = space.count(template);
+                Integer count = countObjects(template, getTypeDescriptorMap(className));
                 if (count > 0) {
                     logInfoMessage("space partition contains " + count + " objects");
                     logInfoMessage("writing to file : " + file.getAbsolutePath());
@@ -52,18 +61,32 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
                         oos.writeUTF(className);
 
                     // we could serialize *all* type descriptors
-                    oos.writeObject(getTypeDescriptorMap(className));
+                    SerialMap typeDescriptorMap = getTypeDescriptorMap(className);
+
+                    logInfoMessage("TYPE DESCRIPTOR");
+                    for (String key :typeDescriptorMap.keySet()){
+                        logInfoMessage("KEY = " + key + " VALUE = " + typeDescriptorMap.get(key));
+                    }
+                    oos.writeObject(typeDescriptorMap);
 
                     // get the objects and write them out
                     GSIteratorConfig config = new GSIteratorConfig();
                     config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
-                    Collection<Object> templates = new LinkedList<Object>();
+                    Collection<Object> templates = new LinkedList<>();
                     templates.add(template);
                     GSIterator iterator = new GSIterator(space.getSpace(), templates, config);
                     logInfoMessage("read " + count + " objects from space partition");
                     Long start = System.currentTimeMillis();
+                    Field field = Class.forName(className).getDeclaredField((String) typeDescriptorMap.get(ROUTING));
+                    field.setAccessible(true);
+
                     while (iterator.hasNext()) {
-                        oos.writeObject(iterator.next());
+                        Object next = iterator.next();
+                        Object routingValue = field.get(next);
+                        if ((routingValue.hashCode() % clusterSize) + 1 == futurePartitionId){
+                            logInfoMessage("ROUTING VALUE = " + routingValue + " CLUSTER SIZE = " + clusterSize + " PARTITION_ID = " + futurePartitionId);
+                            oos.writeObject(next);
+                        }
                     }
                     Long duration = (System.currentTimeMillis() - start);
                     logInfoMessage("export operation took " + duration + " millis");
@@ -73,6 +96,27 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
             }
             return result;
         }
+    }
+
+    private Integer countObjects(Object template, SerialMap typeDescriptorMap) throws RemoteException, UnusableEntryException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException {
+        int count = 0;
+        GSIteratorConfig config = new GSIteratorConfig();
+        config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
+        Collection<Object> templates = new LinkedList<>();
+        templates.add(template);
+        GSIterator iterator = new GSIterator(space.getSpace(), templates, config);
+        Long start = System.currentTimeMillis();
+        Field field = Class.forName(className).getDeclaredField((String) typeDescriptorMap.get(ROUTING));
+        field.setAccessible(true);
+
+        while (iterator.hasNext()) {
+            Object next = iterator.next();
+            Object routingValue = field.get(next);
+            if ((routingValue.hashCode() % clusterSize) + 1 == futurePartitionId){
+                logInfoMessage("ROUTING VALUE = " + routingValue + " CLUSTER SIZE = " + clusterSize + " PARTITION_ID = " + futurePartitionId + " COUNT " + count++);
+            }
+        }
+        return count;
     }
 
     private Object getClassTemplate(String className) {

@@ -1,4 +1,4 @@
-package com.gigaspaces.tool.importexport.model;
+package com.gigaspaces.tools.importexport.model;
 
 import com.gigaspaces.annotation.pojo.SpaceClass;
 import com.gigaspaces.annotation.pojo.SpaceId;
