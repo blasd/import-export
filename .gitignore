@@ -48,3 +48,6 @@ target/
 
 #gigaspaces
 gigaspaces/*
+
+#include libs
+!lib/*
