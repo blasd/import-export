@@ -14,6 +14,8 @@ import org.openspaces.admin.space.Space;
 import org.openspaces.admin.space.SpaceDeployment;
 import org.openspaces.core.GigaSpace;
 
+import java.util.concurrent.TimeUnit;
+
 public class ImportExportTest {
 
     private Admin admin;
@@ -35,13 +37,13 @@ public class ImportExportTest {
         }
         int count = countPersons();
         System.out.println("persons = " + count);
-        SpaceDataImportExportMain.main("-e -l 10.23.11.212 -s mySpace -g pavlo -d /tmp/gs -n 3".split(" "));
+        SpaceDataImportExportMain.main("-e -s mySpace -g pavlo -d /tmp/gs -n 3".split(" "));
         System.out.println("EXPORT COMPLETED");
         undeploySpace("mySpace");
         Thread.sleep(5000);
         gigaSpace = startSpace("mySpace1", 3);
         Assert.assertEquals("", 0, countPersons());
-        SpaceDataImportExportMain.main("-i -l 10.23.11.212 -s mySpace1 -g pavlo -d /tmp/gs".split(" "));
+        SpaceDataImportExportMain.main("-i -s mySpace1 -g pavlo -d /tmp/gs".split(" "));
         Assert.assertEquals("", count, countPersons());
         System.out.println("persons = " + countPersons());
     }
@@ -61,7 +63,7 @@ public class ImportExportTest {
 
     private GigaSpace startSpace(String spaceName, Integer instances){
         gsms = admin.getGridServiceManagers();
-        gsms.waitFor(1);
+        gsms.waitFor(1, 10, TimeUnit.SECONDS);
         ProcessingUnit processingUnit = gsms.
                 deploy(new SpaceDeployment(spaceName).numberOfInstances(instances).numberOfBackups(1));
         Space space = processingUnit.waitForSpace();
