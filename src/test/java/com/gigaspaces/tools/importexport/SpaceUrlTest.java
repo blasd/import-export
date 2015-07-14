@@ -1,4 +1,4 @@
-package com.gigaspaces.tool.importexport;
+package com.gigaspaces.tools.importexport;
 
 
 import com.gigaspaces.tools.importexport.SpaceURLBuilder;
