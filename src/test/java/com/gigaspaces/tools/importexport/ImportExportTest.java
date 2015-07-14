@@ -1,7 +1,6 @@
 package com.gigaspaces.tools.importexport;
 
 import com.gigaspaces.tools.importexport.model.Person;
-import com.gigaspaces.tools.importexport.SpaceDataImportExportMain;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,20 +13,25 @@ import org.openspaces.admin.space.Space;
 import org.openspaces.admin.space.SpaceDeployment;
 import org.openspaces.core.GigaSpace;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 public class ImportExportTest {
 
+    public static final int INITIAL_PARTITION_COUNT = 2;
+    public static final int TARGET_PARTITION_COUNT = 3;
     private Admin admin;
 
     private GridServiceManagers gsms;
 
     private GigaSpace gigaSpace;
 
+    private String group = "test";
+
     @Before
     public void init(){
-        admin = new AdminFactory().addGroup("pavlo").create();
-        gigaSpace = startSpace("mySpace", 2);
+        admin = new AdminFactory().addGroup(group).create();
+        gigaSpace = startSpace("mySpace", INITIAL_PARTITION_COUNT);
     }
 
     @Test
@@ -37,13 +41,18 @@ public class ImportExportTest {
         }
         int count = countPersons();
         System.out.println("persons = " + count);
-        SpaceDataImportExportMain.main("-e -s mySpace -g pavlo -d /tmp/gs -n 3".split(" "));
+        String tempDir = System.getProperty("java.io.tmpdir") + File.separator + "gs";
+        String exportArgs = "-e -s mySpace -g " + group + " -n " + TARGET_PARTITION_COUNT + " -d " + tempDir;
+        System.out.println("EXPORT ARGS = " + exportArgs);
+        SpaceDataImportExportMain.main(exportArgs.toString().split(" "));
         System.out.println("EXPORT COMPLETED");
         undeploySpace("mySpace");
         Thread.sleep(5000);
-        gigaSpace = startSpace("mySpace1", 3);
+        gigaSpace = startSpace("mySpace1", TARGET_PARTITION_COUNT);
         Assert.assertEquals("", 0, countPersons());
-        SpaceDataImportExportMain.main("-i -s mySpace1 -g pavlo -d /tmp/gs".split(" "));
+        String importArgs = "-i -s mySpace1 -g " + group + " -d " + tempDir;
+        System.out.println("IMPORT ARGS = " + importArgs);
+        SpaceDataImportExportMain.main(importArgs.split(" "));
         Assert.assertEquals("", count, countPersons());
         System.out.println("persons = " + countPersons());
     }
