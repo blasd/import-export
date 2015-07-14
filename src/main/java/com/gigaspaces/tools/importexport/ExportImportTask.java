@@ -265,7 +265,9 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
         }   catch (ExecutionException e) {
             //throw  new ImportExportException(e.getCause());
             logMessage("EXECUTION EXCEPTION " + e);
-            logMessage("CAUSE EXCEPTION " + e.getCause().getMessage());
+            if (e.getCause() != null){
+                logMessage("CAUSE EXCEPTION " + e.getCause().getMessage());
+            }
             if (admin == null){
                 admin = initializeAdmin(config);
             }

@@ -17,6 +17,8 @@ import java.lang.reflect.Field;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
@@ -49,7 +51,8 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
                 String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
                 logInfoMessage("reading space " + type + " : " + className);
                 //Integer count = space.count(template);
-                Integer count = countObjects(template, getTypeDescriptorMap(className));
+                List filteredObjects = filterObjectsByRoutingKey(template, getTypeDescriptorMap(className));
+                int count = filteredObjects.size();
                 if (count > 0) {
                     logInfoMessage("space partition contains " + count + " objects");
                     logInfoMessage("writing to file : " + file.getAbsolutePath());
@@ -62,50 +65,30 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
 
                     // we could serialize *all* type descriptors
                     SerialMap typeDescriptorMap = getTypeDescriptorMap(className);
-
-                    logInfoMessage("TYPE DESCRIPTOR");
-                    for (String key :typeDescriptorMap.keySet()){
-                        logInfoMessage("KEY = " + key + " VALUE = " + typeDescriptorMap.get(key));
-                    }
                     oos.writeObject(typeDescriptorMap);
 
-                    // get the objects and write them out
-                    GSIteratorConfig config = new GSIteratorConfig();
-                    config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
-                    Collection<Object> templates = new LinkedList<>();
-                    templates.add(template);
-                    GSIterator iterator = new GSIterator(space.getSpace(), templates, config);
                     logInfoMessage("read " + count + " objects from space partition");
                     Long start = System.currentTimeMillis();
-                    Field field = Class.forName(className).getDeclaredField((String) typeDescriptorMap.get(ROUTING));
-                    field.setAccessible(true);
 
-                    while (iterator.hasNext()) {
-                        Object next = iterator.next();
-                        Object routingValue = field.get(next);
-                        if ((routingValue.hashCode() % clusterSize) + 1 == futurePartitionId){
-                            logInfoMessage("ROUTING VALUE = " + routingValue + " CLUSTER SIZE = " + clusterSize + " PARTITION_ID = " + futurePartitionId);
-                            oos.writeObject(next);
-                        }
+                    for (Object obj : filteredObjects){
+                        oos.writeObject(obj);
                     }
+
                     Long duration = (System.currentTimeMillis() - start);
                     logInfoMessage("export operation took " + duration + " millis");
-
-
                 }
             }
             return result;
         }
     }
 
-    private Integer countObjects(Object template, SerialMap typeDescriptorMap) throws RemoteException, UnusableEntryException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException {
-        int count = 0;
+    private List filterObjectsByRoutingKey(Object template, SerialMap typeDescriptorMap) throws RemoteException, UnusableEntryException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException {
+        List result = new ArrayList();
         GSIteratorConfig config = new GSIteratorConfig();
         config.setBufferSize(batch).setIteratorScope(IteratorScope.CURRENT);
         Collection<Object> templates = new LinkedList<>();
         templates.add(template);
         GSIterator iterator = new GSIterator(space.getSpace(), templates, config);
-        Long start = System.currentTimeMillis();
         Field field = Class.forName(className).getDeclaredField((String) typeDescriptorMap.get(ROUTING));
         field.setAccessible(true);
 
@@ -113,10 +96,10 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
             Object next = iterator.next();
             Object routingValue = field.get(next);
             if ((routingValue.hashCode() % clusterSize) + 1 == futurePartitionId){
-                logInfoMessage("ROUTING VALUE = " + routingValue + " CLUSTER SIZE = " + clusterSize + " PARTITION_ID = " + futurePartitionId + " COUNT " + count++);
+                result.add(next);
             }
         }
-        return count;
+        return result;
     }
 
     private Object getClassTemplate(String className) {

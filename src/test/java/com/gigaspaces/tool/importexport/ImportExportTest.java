@@ -25,13 +25,12 @@ public class ImportExportTest {
     @Before
     public void init(){
         admin = new AdminFactory().addGroup("pavlo").create();
-        gigaSpace = startSpace("mySpace", 4);
+        gigaSpace = startSpace("mySpace", 2);
     }
 
     @Test
     public void testExportImport() throws InterruptedException {
-//        int count = 1000;
-        for (int i = 0; i < 1000; i++){
+        for (int i = 0; i < 10000; i++){
             gigaSpace.write(new Person(i, "name" + i, i + 1));
         }
         int count = countPersons();
