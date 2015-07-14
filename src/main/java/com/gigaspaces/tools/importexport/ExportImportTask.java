@@ -217,7 +217,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
         for (String className : classList) {
             for (int futurePartitionId = 1; futurePartitionId <= config.getNumberOfPartitions(); futurePartitionId++){
                 File file = new File(storagePath + File.separator + className + DOT + currentPartitionId + DOT + futurePartitionId + SUFFIX);
-                logMessage("starting export TO FILE " + file.getAbsolutePath());
+                logMessage("starting export to file " + file.getAbsolutePath());
                 SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, config.getNumberOfPartitions());
                 logMessage("starting export thread for " + className);
                 threads.add(operation);

@@ -9,7 +9,7 @@ import java.util.List;
 
 public class InputParameters implements Serializable{
 
-    @Parameter(names = {"-s", "--space"}, description = "The name of the space")
+    @Parameter(names = {"-s", "--space"}, description = "The name of the space", required = true)
     private String name = "space";
 
     @Parameter(names = {"-e", "--export"}, description = "Performs space class export")
@@ -18,10 +18,7 @@ public class InputParameters implements Serializable{
     @Parameter(names = {"-i", "--import"}, description = "Performs space class import")
     private Boolean imp = true;
 
-    @Parameter(names = {"-t", "--test"}, description = "Performs space class import")
-    private Boolean test = false;
-
-    @Parameter(names = {"-b", "--batch"}, description = "Performs a sanity check")
+    @Parameter(names = {"-b", "--batch"}, description = "The batch size - default is 1000")
     private Integer batch = 1000;
 
     @Parameter(names = {"-d", "--directory"}, description = "Read-from/write-to directory", required = true)
@@ -78,14 +75,6 @@ public class InputParameters implements Serializable{
 
     public void setImp(Boolean imp) {
         this.imp = imp;
-    }
-
-    public Boolean getTest() {
-        return test;
-    }
-
-    public void setTest(Boolean test) {
-        this.test = test;
     }
 
     public Integer getBatch() {
