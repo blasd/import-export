@@ -94,6 +94,9 @@ The tool supports the following arguments:
 | -p                       | --partitions       | optional          | NA                                   | The partition(s) to restore - comma separated                                                                                                                              |
 | -n                       | --number           | optional          | NA                                   | Number of partitions to export. Fro instance: now space has 4 partitions, but you wanto export all the data to space with 3 partitions, then "-n 3" has to be specified    |
 | -d                       | --directory        | required          | NA                                   | Read-from/write-to directory                                                                                                                                               |
+| -u                       | --username         | optional          | NA                                   | The username when connecting to a secured space.                                                                                                                           |
+| -p                       | --password         | optional          | NA                                   | The password when connecting to a secured space.                                                                                                                           |
+
 
 Tests
 ---
