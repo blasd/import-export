@@ -215,10 +215,10 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
         Integer currentPartitionId = clusterInfo.getInstanceId();
         List<Callable<Audit>> threads = new ArrayList<>();
         for (String className : classList) {
-            for (int futurePartitionId = 1; futurePartitionId <= config.getNumberOfPartitions(); futurePartitionId++){
+            for (int futurePartitionId = 1; futurePartitionId <= getNumberOfPartitions(); futurePartitionId++){
                 File file = new File(storagePath + File.separator + className + DOT + currentPartitionId + DOT + futurePartitionId + SUFFIX);
                 logMessage("starting export to file " + file.getAbsolutePath());
-                SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, config.getNumberOfPartitions());
+                SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, getNumberOfPartitions());
                 logMessage("starting export thread for " + className);
                 threads.add(operation);
             }
@@ -313,6 +313,10 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             for (int c = 0; c < runtimeInfo.m_ClassNames.size(); c++)
                 logger.fine(runtimeInfo.m_ClassNames.get(c) + " has " + numOfEntries.get(c).toString() + " objects");
         }
+    }
+
+    private Integer getNumberOfPartitions(){
+        return (config.getNumberOfPartitions() != null) ? config.getNumberOfPartitions() : clusterInfo.getNumberOfInstances();
     }
 
 	@Override
