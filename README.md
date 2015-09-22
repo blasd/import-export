@@ -14,12 +14,11 @@ With this tool we will demonstrate how to export data from a space via serializi
 
 ##### Step 2: Modify XAP version in pom.xml file
 <br>
-Modify `<gsVersion>` within the `pom.xml` to include the right XAP release - below example having XAP 9.7 (9.7.0-10496-RELEASE) as the `<gsVersion>` value:
+Modify `<gsVersion>` within the `pom.xml` to include the right XAP release - below example having XAP 10.1.1 (10.1.1-12800-RELEASE) as the `<gsVersion>` value:
 
 ````xml
 <properties>
-        <gsVersion>9.7.0-10496-RELEASE</gsVersion>
-        <springVersion>3.1.3.RELEASE</springVersion>
+        <gsVersion>10.1.1-12800-RELEASE</gsVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 </properties>
 ```
