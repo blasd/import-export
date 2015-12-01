@@ -8,19 +8,15 @@ import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
 import com.gigaspaces.tools.importexport.remoting.FileExportTask;
 import com.gigaspaces.tools.importexport.remoting.ImportFilesTask;
 import com.gigaspaces.tools.importexport.remoting.RemoteTaskResult;
+import com.gigaspaces.tools.importexport.remoting.RouteTranslator;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
-import com.google.common.base.Joiner;
-import com.j_spaces.core.client.SpaceURL;
 import org.openspaces.core.GigaSpace;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static java.util.Collections.max;
 
 public class Program {
     private static final String SYSTEM_LOGGER_KEY = "import-export";
@@ -33,33 +29,19 @@ public class Program {
 
     private void run(ExportConfiguration config) {
         SpaceConnectionFactory spaceConnectionFactory = new SpaceConnectionFactory(config);
+        RouteTranslator router = spaceConnectionFactory.createRouter();
 
         try {
-            GigaSpace space = spaceConnectionFactory.space();
-            Collection<Integer> partitions = calculatePartitionCount(space, config);
-
-            logger.info(String.format("%s the following partitions: %s", config.getOperation() == Operation.EXPORT ? "Exporting" : "Importing", Joiner.on(",").join(partitions)));
-
-
+            GigaSpace space = spaceConnectionFactory.createProxy();
             List<AsyncFuture<RemoteTaskResult>> tasks = new ArrayList<>();
 
-            Integer newPartitionCount;
-
-            if(config.getNewPartitionCount() != null && config.getNewPartitionCount() > 0)
-                newPartitionCount = config.getNewPartitionCount();
-            else
-                newPartitionCount = max(partitions);
-
-            if(config.getOperation() == Operation.EXPORT)
-                logger.info(String.format("New partition count: %s", newPartitionCount));
-
-            for(Integer partition : partitions){
+            for(Integer partition : router.getTargetPartitions()){
                 AsyncFuture<RemoteTaskResult> resultSet;
 
                 if(config.getOperation() == Operation.IMPORT){
-                    resultSet = space.execute(new ImportFilesTask(newPartitionCount, config), partition);
+                    resultSet = space.execute(new ImportFilesTask(router.getDesiredPartitionCount(), config), partition);
                 } else if (config.getOperation() == Operation.EXPORT){
-                    resultSet = space.execute(new FileExportTask(newPartitionCount, config), partition);
+                    resultSet = space.execute(new FileExportTask(router.getDesiredPartitionCount(), config), partition);
                 } else {
                     throw new IllegalStateException("Invalid operation.");
                 }
@@ -78,7 +60,7 @@ public class Program {
                         onResult(currentTask.get());
                     }
                 } else {
-                    Thread.sleep(1000);
+                    Thread.sleep(config.getThreadSleepMilliseconds());
                 }
             }
 
@@ -87,26 +69,6 @@ public class Program {
         catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static Collection<Integer> calculatePartitionCount(GigaSpace space, ExportConfiguration config) {
-        Collection<Integer> output = new ArrayList<>();
-
-        if(config.getPartitions() != null && !config.getPartitions().isEmpty()){
-            output.addAll(config.getPartitions());
-        } else {
-            SpaceURL url = space.getSpace().getURL();
-            String total_members = url.getProperty("total_members");
-
-            String[] split = total_members.split(",");
-            int partitionCount = Integer.parseInt(split[0]);
-
-            for(int x = 0; x < partitionCount; x++){
-                output.add(x + 1);
-            }
-        }
-
-        return output;
     }
 
     private void onResult(RemoteTaskResult result) {

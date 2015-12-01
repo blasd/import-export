@@ -1,5 +1,6 @@
 package com.gigaspaces.tools.importexport.config;
 
+import com.gigaspaces.tools.importexport.remoting.RouteTranslator;
 import com.google.common.base.Joiner;
 import com.j_spaces.core.IJSpace;
 import org.openspaces.admin.Admin;
@@ -22,6 +23,7 @@ public class SpaceConnectionFactory {
     private UrlSpaceConfigurer urlSpaceConfigurer;
     private GigaSpace space;
     private Admin admin;
+    private RouteTranslator router;
 
     public SpaceConnectionFactory(ExportConfiguration config) {
         this.config = config;
@@ -34,7 +36,7 @@ public class SpaceConnectionFactory {
         return "";
     }
 
-    public GigaSpace space() {
+    public GigaSpace createProxy() {
 
         if(space == null) {
             urlSpaceConfigurer = new UrlSpaceConfigurer("jini://*/*/" + config.getName());
@@ -86,5 +88,13 @@ public class SpaceConnectionFactory {
         }
 
         return admin;
+    }
+
+    public RouteTranslator createRouter() {
+        if(router == null){
+            router = new RouteTranslator(config.getPartitions(), config.getNewPartitionCount(), createProxy());
+            router.initialize();
+        }
+        return router;
     }
 }
