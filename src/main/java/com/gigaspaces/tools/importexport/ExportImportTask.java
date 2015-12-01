@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
-import com.gigaspaces.tools.importexport.config.InputParameters;
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 
 import com.gigaspaces.tools.importexport.exception.ImportExportException;
 import org.openspaces.admin.Admin;
@@ -30,6 +30,7 @@ import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.j_spaces.core.admin.IRemoteJSpaceAdmin;
 import com.j_spaces.core.admin.SpaceRuntimeInfo;
 
+@Deprecated
 public class ExportImportTask implements DistributedTask<SerialList, List<String>>, ClusterInfoAware {
 	
 	private static final long serialVersionUID = 5257838144063003892L;
@@ -53,7 +54,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
 	private Integer batch;
 	private Audit audit = new Audit();
 	private String storagePath;
-    private InputParameters config;
+    private ExportConfiguration config;
     private Admin admin;
 
 	// we don't really use this other than to get the groups and locators
@@ -71,15 +72,15 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
     	public String getValue() { return value; }
     }
 
-	public ExportImportTask(InputParameters config) {
-        this.export = config.getExport();
+	public ExportImportTask(ExportConfiguration config) {
+//        this.export = config.getExport();
         this.classNames.addAll(config.getClasses());
         this.batch = config.getBatch();
         this.storagePath = config.getDirectory();
         this.config = config;
 	}
 
-    private Admin initializeAdmin(InputParameters config) {
+    private Admin initializeAdmin(ExportConfiguration config) {
         AdminFactory adminFactory = new AdminFactory();
         if (config.getLocators() != null) {
             for (String locator : config.getLocators()) {
@@ -110,7 +111,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
             }   else {
                 handleImport();
             }
-        }   catch (ImportExportException e) {
+            }   catch (ImportExportException e) {
             logMessage("EXECUTION EXCEPTION " + e);
             if (admin == null){
                 admin = initializeAdmin(config);
@@ -217,10 +218,10 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
         for (String className : classList) {
             for (int futurePartitionId = 1; futurePartitionId <= getNumberOfPartitions(); futurePartitionId++){
                 File file = new File(storagePath + File.separator + className + DOT + currentPartitionId + DOT + futurePartitionId + SUFFIX);
-                logMessage("starting export to file " + file.getAbsolutePath());
-                SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, getNumberOfPartitions());
+                logMessage("starting export to filePath " + file.getAbsolutePath());
+//                SpaceClassExportThread operation = new SpaceClassExportThread(gigaSpace, file, className, batch, futurePartitionId, getNewPartitionCount());
                 logMessage("starting export thread for " + className);
-                threads.add(operation);
+//                threads.add(operation);
             }
         }
         executeTasks(executor, threads);
@@ -316,7 +317,7 @@ public class ExportImportTask implements DistributedTask<SerialList, List<String
     }
 
     private Integer getNumberOfPartitions(){
-        return (config.getNumberOfPartitions() != null) ? config.getNumberOfPartitions() : clusterInfo.getNumberOfInstances();
+        return (config.getNewPartitionCount() != null) ? config.getNewPartitionCount() : clusterInfo.getNumberOfInstances();
     }
 
 	@Override

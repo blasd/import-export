@@ -19,7 +19,7 @@
         </pluginRepository>
     </pluginRepositories>
     <properties>
-        <gsVersion>10.1.1-12800-RELEASE</gsVersion>
+        <gsVersion>9.5.2-RELEASE</gsVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
     </properties>

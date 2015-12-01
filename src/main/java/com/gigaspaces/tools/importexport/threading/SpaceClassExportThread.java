@@ -1,10 +1,12 @@
-package com.gigaspaces.tools.importexport;
+package com.gigaspaces.tools.importexport.threading;
 
 import com.gigaspaces.client.iterator.GSIteratorConfig;
 import com.gigaspaces.client.iterator.IteratorScope;
 import com.gigaspaces.document.SpaceDocument;
 import com.gigaspaces.metadata.SpaceTypeDescriptor;
 import com.gigaspaces.metadata.index.SpaceIndex;
+import com.gigaspaces.tools.importexport.AbstractSpaceThread;
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.serial.Audit;
 import com.gigaspaces.tools.importexport.serial.SerialList;
 import com.gigaspaces.tools.importexport.serial.SerialMap;
@@ -24,41 +26,52 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.gigaspaces.tools.importexport.ExportImportTask.*;
 
-public class SpaceClassExportThread extends AbstractSpaceThread{
+@Deprecated
+public class SpaceClassExportThread extends AbstractSpaceThread implements Serializable {
+    private static final long serialVersionUID = 0l;
 
+    private static final String SUFFIX = ".ser.gz";
+    private static final String DOT = ".";
+    private final String fileName;
+    private ExportConfiguration config;
     private String className;
+    private Integer partitionId;
 
     private Integer futurePartitionId;
+    private Integer newPartitionCount;
 
-    private Integer clusterSize;
-
-    public SpaceClassExportThread(GigaSpace space, File file, String className, Integer batch, Integer futurePartitionID, Integer clusterSize) {
-        this.space = space;
-        this.file = file;
+    public SpaceClassExportThread(GigaSpace space, ExportConfiguration config, String className, Integer partitionId, Integer futurePartitionId, Integer newPartitionCount){
         this.className = className;
-        this.futurePartitionId = futurePartitionID;
-        this.batch = batch;
-        this.clusterSize = clusterSize;
+        this.partitionId = partitionId;
+        this.futurePartitionId = futurePartitionId;
+        this.newPartitionCount = newPartitionCount;
+        this.space = space;
+        this.config = config;
+        this.batch = config.getBatch();
+        this.fileName = className + DOT + SUFFIX;
+        this.filePath = config.getDirectory() + "/" + this.fileName;
     }
 
     @Override
-    protected Audit performOperation() throws Exception{
-        try (GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-             ObjectOutputStream oos = new ObjectOutputStream(zos)){
+    protected Audit performOperation() throws Exception {
+        Audit output = new Audit();
+        output.setFileName(this.fileName);
+        output.setClassName(className);
+        output.start();
 
-            Object template = getClassTemplate(className);
-            if (template != null) {
-                String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
-                logInfoMessage("reading space " + type + " : " + className);
-                //Integer count = space.count(template);
-                List filteredObjects = filterObjectsByRoutingKey(template, getTypeDescriptorMap(className));
-                int count = filteredObjects.size();
-                if (count > 0) {
-                    logInfoMessage("space partition contains " + count + " objects");
-                    logInfoMessage("writing to file : " + file.getAbsolutePath());
-                    // write some header data
+        Object template = getClassTemplate(className);
+        if (template != null) {
+            String type = (SpaceDocument.class.isInstance(template) ? Type.DOC.getValue() : Type.CLASS.getValue());
+            List filteredObjects = filterObjectsByRoutingKey(template, getTypeDescriptorMap(className));
+            int count = filteredObjects.size();
+            output.setCount(count);
+
+            if (count > 0) {
+                try(GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)));
+                ObjectOutputStream oos = new ObjectOutputStream(zos)){
                     oos.writeUTF(SpaceDocument.class.isInstance(template) ? DOCUMENT : className);
                     oos.writeInt(count);
+
                     // space document needs to write type descriptor
                     if (Type.DOC.getValue().equals(type))
                         oos.writeUTF(className);
@@ -67,19 +80,15 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
                     SerialMap typeDescriptorMap = getTypeDescriptorMap(className);
                     oos.writeObject(typeDescriptorMap);
 
-                    logInfoMessage("read " + count + " objects from space partition");
-                    Long start = System.currentTimeMillis();
-
                     for (Object obj : filteredObjects){
                         oos.writeObject(obj);
                     }
-
-                    Long duration = (System.currentTimeMillis() - start);
-                    logInfoMessage("export operation took " + duration + " millis");
                 }
             }
-            return result;
         }
+
+        output.stop();
+        return output;
     }
 
     private List filterObjectsByRoutingKey(Object template, SerialMap typeDescriptorMap) throws RemoteException, UnusableEntryException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException {
@@ -95,7 +104,7 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
         while (iterator.hasNext()) {
             Object next = iterator.next();
             Object routingValue = field.get(next);
-            if ((routingValue.hashCode() % clusterSize) + 1 == futurePartitionId){
+            if ((routingValue.hashCode() % this.newPartitionCount) + 1 == futurePartitionId){
                 result.add(next);
             }
         }
@@ -153,5 +162,4 @@ public class SpaceClassExportThread extends AbstractSpaceThread{
 
         return documentMap;
     }
-
 }

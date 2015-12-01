@@ -44,7 +44,7 @@ public class ImportExportTest {
         String tempDir = System.getProperty("java.io.tmpdir") + File.separator + "gs";
         String exportArgs = "-e -s mySpace -g " + group + " -n " + TARGET_PARTITION_COUNT + " -d " + tempDir;
         System.out.println("EXPORT ARGS = " + exportArgs);
-        SpaceDataImportExportMain.main(exportArgs.toString().split(" "));
+        Program.main(exportArgs.toString().split(" "));
         System.out.println("EXPORT COMPLETED");
         undeploySpace("mySpace");
         Thread.sleep(5000);
@@ -52,7 +52,7 @@ public class ImportExportTest {
         Assert.assertEquals("", 0, countPersons());
         String importArgs = "-i -s mySpace1 -g " + group + " -d " + tempDir;
         System.out.println("IMPORT ARGS = " + importArgs);
-        SpaceDataImportExportMain.main(importArgs.split(" "));
+        Program.main(importArgs.split(" "));
         Assert.assertEquals("", count, countPersons());
         System.out.println("persons = " + countPersons());
     }

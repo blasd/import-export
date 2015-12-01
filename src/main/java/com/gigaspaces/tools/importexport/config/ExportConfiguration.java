@@ -7,16 +7,15 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InputParameters implements Serializable{
+public class ExportConfiguration implements Serializable {
 
-    @Parameter(names = {"-s", "--space"}, description = "The name of the space", required = true)
+    private static final long serialVersionUID = 435362013613840214L;
+
+    @Parameter(names = { "-o", "--operation"}, description = "", required = true)
+    private Operation operation = Operation.EXPORT;
+
+    @Parameter(names = {"-s", "--space"}, description = "Name of the space to operate", required = true)
     private String name = "space";
-
-    @Parameter(names = {"-e", "--export"}, description = "Performs space class export")
-    private Boolean export = false;
-
-    @Parameter(names = {"-i", "--import"}, description = "Performs space class import")
-    private Boolean imp = true;
 
     @Parameter(names = {"-b", "--batch"}, description = "The batch size - default is 1000")
     private Integer batch = 1000;
@@ -25,16 +24,16 @@ public class InputParameters implements Serializable{
     private String directory;
 
     @Parameter(names = {"-l", "--locators"}, description = "The names of lookup services hosts - comma separated", splitter = CommaParameterSplitter.class)
-    private List<String> locators = new ArrayList<String>();
+    private List<String> locators = new ArrayList<>();
 
     @Parameter(names = {"-g", "--groups"}, description = "The names of lookup groups - comma separated")
-    private List<String> groups = new ArrayList<String>();
+    private List<String> groups = new ArrayList<>();
 
     @Parameter(names = {"-c", "--classes"}, description = "The classes whose objects to import/export - comma separated")
-    private List<String> classes = new ArrayList<String>();
+    private List<String> classes = new ArrayList<>();
 
     @Parameter(names = {"-p", "--partitions"}, description = "The partition(s) to restore - comma separated")
-    private List<Integer> partitions = new ArrayList<Integer>();
+    private List<Integer> partitions = new ArrayList<>();
 
     @Parameter(names = {"-u", "--username"}, description = "The username when connecting to a secured space.")
     private String username;
@@ -43,14 +42,14 @@ public class InputParameters implements Serializable{
     private String password;
 
     @Parameter(names = {"-n", "--number"}, description = "Number of partitions to export.")
-    private Integer numberOfPartitions;
+    private Integer newPartitionCount;
 
-    public Integer getNumberOfPartitions() {
-        return numberOfPartitions;
+    public Integer getNewPartitionCount() {
+        return newPartitionCount;
     }
 
-    public void setNumberOfPartitions(Integer numberOfPartitions) {
-        this.numberOfPartitions = numberOfPartitions;
+    public void setNewPartitionCount(Integer newPartitionCount) {
+        this.newPartitionCount = newPartitionCount;
     }
 
     public String getName() {
@@ -59,22 +58,6 @@ public class InputParameters implements Serializable{
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Boolean getExport() {
-        return export;
-    }
-
-    public void setExport(Boolean export) {
-        this.export = export;
-    }
-
-    public Boolean getImp() {
-        return imp;
-    }
-
-    public void setImp(Boolean imp) {
-        this.imp = imp;
     }
 
     public Integer getBatch() {
@@ -139,5 +122,13 @@ public class InputParameters implements Serializable{
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Operation getOperation() {
+        return operation;
+    }
+
+    public void setOperation(Operation operation) {
+        this.operation = operation;
     }
 }

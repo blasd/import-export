@@ -13,7 +13,7 @@ public abstract class AbstractSpaceThread implements Callable<Audit> {
     protected final static java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Constants.LOGGER_COMMON);
 
     protected GigaSpace space;
-    protected File file;
+    protected String filePath;
     protected Integer batch = 1000;
     protected Audit result = new Audit();
 

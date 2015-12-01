@@ -7,8 +7,13 @@ public class Audit extends SerialList implements Serializable {
 	private Integer partition = 0;
 
 	private static final long serialVersionUID = 3485223374395266543L;
+    private String className;
+    private long start;
+    private int count;
+    private long stop;
+    private String fileName;
 
-	public Audit() {
+    public Audit() {
 
 	}
 	
@@ -36,4 +41,39 @@ public class Audit extends SerialList implements Serializable {
 		this.partition = partition;
 	}
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void start() {
+        this.start = System.currentTimeMillis();
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void stop() {
+        this.stop = System.currentTimeMillis();
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public long getTime() {
+        return stop - start;
+    }
 }

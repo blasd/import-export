@@ -20,16 +20,16 @@ public class SpaceClassImportThread extends AbstractSpaceThread{
 
     public SpaceClassImportThread(GigaSpace space, File file, Integer batch) {
         this.space = space;
-        this.file = file;
+//        this.filePath = file;
         this.batch = batch;
     }
 
     @Override
     protected Audit performOperation() throws Exception {
-        try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(file)));
+        try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(filePath)));
              ObjectInputStream input = new ObjectInputStream(zis)){
 
-            logInfoMessage("opened import file " + file.toString());
+            logInfoMessage("opened import filePath " + filePath.toString());
             String className = input.readUTF();
             Integer objectCount = input.readInt();
             String typeName = isDocument(className) ? input.readUTF() : className;
