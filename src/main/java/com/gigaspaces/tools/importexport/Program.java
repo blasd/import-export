@@ -49,25 +49,31 @@ public class Program {
                 tasks.add(resultSet);
             }
 
-            while(!tasks.isEmpty()){
-                AsyncFuture<RemoteTaskResult> currentTask = tasks.get(0);
-                if(currentTask.isDone() || currentTask.isCancelled()){
-                    tasks.remove(0);
+            logger.info(String.format("Started import/export operation with the following configuration: \n%s", config.toString()));
 
-                    if(currentTask.isDone()){
-                        onResult(currentTask.get());
-                    } else if (currentTask.isCancelled()){
-                        onResult(currentTask.get());
-                    }
-                } else {
-                    Thread.sleep(config.getThreadSleepMilliseconds());
-                }
-            }
+            waitOnTasks(config, tasks);
 
             spaceConnectionFactory.close();
         }
         catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void waitOnTasks(ExportConfiguration config, List<AsyncFuture<RemoteTaskResult>> tasks) throws InterruptedException, java.util.concurrent.ExecutionException {
+        while(!tasks.isEmpty()){
+            AsyncFuture<RemoteTaskResult> currentTask = tasks.get(0);
+            if(currentTask.isDone() || currentTask.isCancelled()){
+                tasks.remove(0);
+
+                if(currentTask.isDone()){
+                    onResult(currentTask.get());
+                } else if (currentTask.isCancelled()){
+                    onResult(currentTask.get());
+                }
+            } else {
+                Thread.sleep(config.getThreadSleepMilliseconds());
+            }
         }
     }
 

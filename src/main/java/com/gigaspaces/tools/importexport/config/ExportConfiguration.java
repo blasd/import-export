@@ -42,7 +42,7 @@ public class ExportConfiguration implements Serializable {
     private String password;
 
     @Parameter(names = {"-n", "--number"}, description = "Relevant only when exporting data for use in a grid with a different partition count (i.e. Exporting data from a 6 partition grid to 2 partition grid or vice versa.)")
-    private Integer newPartitionCount;
+    private Integer newPartitionCount = 0;
 
     @Parameter(names = {"--thread-sleep"}, description = "Number of milliseconds to sleep between checks for task completion.")
     private Integer threadSleepMilliseconds = 1000;
@@ -141,5 +141,32 @@ public class ExportConfiguration implements Serializable {
 
     public void setThreadSleepMilliseconds(Integer threadSleepMilliseconds) {
         this.threadSleepMilliseconds = threadSleepMilliseconds;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder output = new StringBuilder();
+        output.append(operation).append(" [");
+
+        output.append("Space: ").append(name).append(", ");
+        output.append("Lookup Groups: ").append(groups).append(", ");
+        output.append("Lookup Locators: ").append(locators).append(", ");
+
+        if(username != null && !username.isEmpty()){
+            output.append("XAP Username: ").append(username).append(", ");
+        }
+
+        if(password != null && !password.isEmpty()){
+            output.append("XAP Password: ****, ");
+        }
+
+        output.append("Output/Input Directory: ").append(directory).append(", ");
+        output.append("Operating Partitions: '").append(partitions).append("', ");
+        output.append("Export/Import Classes: '").append(classes).append("', ");
+        output.append("XAP Read Batch Size: ").append(batch).append(", ");
+        output.append("New partition count: ").append(newPartitionCount == 0 ? "Not specified" : newPartitionCount).append(", ");
+        output.append("Thread sleep ms: ").append(threadSleepMilliseconds).append("]\n");
+
+        return output.toString();
     }
 }
