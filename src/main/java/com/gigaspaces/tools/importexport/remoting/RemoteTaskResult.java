@@ -11,7 +11,7 @@ public class RemoteTaskResult implements Serializable {
     private String hostName;
     private Long processId;
     private Integer partitionId;
-    private Exception exception;
+    private Collection<Exception> exceptions;
     private Collection<ThreadAudit> audits;
     private long start;
     private long stop;
@@ -40,12 +40,12 @@ public class RemoteTaskResult implements Serializable {
         this.partitionId = partitionId;
     }
 
-    public Exception getException() {
-        return exception;
+    public Collection<Exception> getExceptions() {
+        return exceptions;
     }
 
-    public void setException(Exception exception) {
-        this.exception = exception;
+    public void setExceptions(Collection<Exception> exception) {
+        this.exceptions = exception;
     }
 
     public Collection<ThreadAudit> getAudits() {

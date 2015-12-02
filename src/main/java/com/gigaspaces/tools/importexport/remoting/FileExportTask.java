@@ -44,7 +44,7 @@ public class FileExportTask extends AbstractFileTask {
             waitOnThreads(output, threads);
 
         } catch(Exception ex){
-            output.setException(ex);
+            output.getExceptions().add(ex);
         }
         output.stop();
         return output;

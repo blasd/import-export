@@ -2,8 +2,6 @@ package com.gigaspaces.tools.importexport.remoting;
 
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
-import com.gigaspaces.tools.importexport.threading.FileCreatorThread;
-import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.gsc.GridServiceContainer;
@@ -29,11 +27,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     protected ExportConfiguration config;
     protected ClusterInfo clusterInfo;
 
-    /** LRMI Class Loading Hack **/
-    private FileCreatorThread creatorThread;
-    private FileReaderThread readerThread;
-    private ThreadAudit threadAudit;
-    /** LRMI Class Loading Hack **/
+    protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
 
     @TaskGigaSpace
     protected GigaSpace space;
@@ -48,6 +42,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     }
 
     protected final void configureOutput(RemoteTaskResult output) throws Exception {
+        output.setExceptions(new ArrayList<Exception>());
         output.setPartitionId(this.clusterInfo.getInstanceId());
         output.setAudits(new ArrayList<ThreadAudit>());
 
@@ -92,7 +87,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
                     if(threadAudit != null)
                         taskResult.getAudits().add(threadAudit);
                 } catch (ExecutionException ex){
-                    ex.getCause().printStackTrace();
+                    taskResult.getExceptions().add(ex);
                 }
 
                 futures.remove(0);

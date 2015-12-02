@@ -34,7 +34,7 @@ public class FileImportTask extends AbstractFileTask {
             waitOnThreads(output, threads);
 
         } catch(Exception ex){
-            output.setException(ex);
+            output.getExceptions().add(ex);
         }
 
         return output;

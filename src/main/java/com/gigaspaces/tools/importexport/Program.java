@@ -93,35 +93,35 @@ public class Program {
                 Exception threadException = audit.getException();
 
                 if(audit.getCount() > 0 && threadException == null)
-                    builder.append(String.format("\t%s | Records: %s | Elapsed time (ms): %s\n", audit.getFileName(), audit.getCount(), audit.getTime()));
+                    builder.append(String.format("\t\t%s | Records: %s | Elapsed time (ms): %s\n", audit.getFileName(), audit.getCount(), audit.getTime()));
                 else if(threadException != null){
-                    builder.append(String.format("\t%s | Encountered exception.", audit.getFileName()));
-
-                    StringWriter stringWriter = new StringWriter();
-                    PrintWriter printWriter = new PrintWriter(stringWriter);
-                    threadException.printStackTrace(printWriter);
-                    builder.append("\n-- START OF EXCEPTION --\n");
-                    builder.append(stringWriter.toString());
-                    builder.append("-- END OF EXCEPTION --\n");
-                    printWriter.close();
+                    builder.append(String.format("\t\t%s | Encountered exception.", audit.getFileName()));
+                    builder.append(formatException(threadException));
                 }
             }
         }
 
-        formatForException(builder, result.getException());
+        if(result.getExceptions() != null && !result.getExceptions().isEmpty()){
+            builder.append("\n\tExceptions:");
+            for(Exception ex : result.getExceptions()){
+                builder.append(formatException(ex));
+            }
+        }
+
         logger.info(builder.toString());
     }
 
-    private void formatForException(StringBuilder builder, Exception exception) {
-        if(exception == null) return;
+    private String formatException(Exception ex){
+        StringBuilder output = new StringBuilder();
+        output.append("\n\n-- EXCEPTION --\n");;
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        ex.printStackTrace(printWriter);
+        printWriter.close();
+        output.append(stringWriter.toString());
+        output.append("\n---------------\n\n");
 
-        builder.append("Exception encountered: \n");
-        builder.append(exception.getMessage()).append("\n");
-
-        for(StackTraceElement element : exception.getStackTrace()){
-            builder.append(element.toString()).append("\n");
-        }
-
+        return output.toString();
     }
 
     public static ExportConfiguration parseArguments(String[] args) {
