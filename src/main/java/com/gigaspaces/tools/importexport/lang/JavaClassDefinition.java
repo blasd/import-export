@@ -5,6 +5,7 @@ import com.gigaspaces.metadata.SpaceTypeDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by skyler on 12/1/2015.
@@ -49,5 +50,19 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
         }
 
         return routingField.get(instance);
+    }
+
+    @Override
+    public Object toInstance(HashMap<String, Object> asMap) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException {
+        Class<?> aClass = Class.forName(className);
+        Object output = aClass.newInstance();
+
+        for(Map.Entry<String, Object> property : asMap.entrySet()){
+            Field field = aClass.getDeclaredField(property.getKey());
+            field.setAccessible(true);
+            field.set(output, property.getValue());
+        }
+
+        return output;
     }
 }

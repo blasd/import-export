@@ -6,7 +6,7 @@ import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.Operation;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
 import com.gigaspaces.tools.importexport.remoting.FileExportTask;
-import com.gigaspaces.tools.importexport.remoting.ImportFilesTask;
+import com.gigaspaces.tools.importexport.remoting.FileImportTask;
 import com.gigaspaces.tools.importexport.remoting.RemoteTaskResult;
 import com.gigaspaces.tools.importexport.remoting.RouteTranslator;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
@@ -39,7 +39,7 @@ public class Program {
                 AsyncFuture<RemoteTaskResult> resultSet;
 
                 if(config.getOperation() == Operation.IMPORT){
-                    resultSet = space.execute(new ImportFilesTask(router.getDesiredPartitionCount(), config), partition);
+                    resultSet = space.execute(new FileImportTask(config), partition);
                 } else if (config.getOperation() == Operation.EXPORT){
                     resultSet = space.execute(new FileExportTask(router.getDesiredPartitionCount(), config), partition);
                 } else {
@@ -92,7 +92,7 @@ public class Program {
                 Exception threadException = audit.getException();
 
                 if(audit.getCount() > 0 && threadException == null)
-                    builder.append(String.format("\t%s | Records: %s\n", audit.getFileName(), audit.getCount()));
+                    builder.append(String.format("\t%s | Records: %s | Elapsed time (ms): %s\n", audit.getFileName(), audit.getCount(), audit.getTime()));
                 else if(threadException != null){
                     builder.append(String.format("\t%s | Encountered exception.", audit.getFileName()));
 

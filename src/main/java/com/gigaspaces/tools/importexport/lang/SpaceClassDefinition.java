@@ -15,7 +15,6 @@ public  abstract class SpaceClassDefinition implements Serializable {
     protected String className;
     protected SpaceTypeDescriptor typeDescriptor;
 
-
     public static SpaceClassDefinition create(GigaSpace space, String className){
         SpaceClassDefinition output;
         SpaceTypeDescriptor typeDescriptor = space.getTypeManager().getTypeDescriptor(className);
@@ -34,5 +33,11 @@ public  abstract class SpaceClassDefinition implements Serializable {
     public abstract Object toTemplate() throws ClassNotFoundException, InstantiationException, IllegalAccessException;
 
     public abstract Object getRoutingValue(Object instance) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException;
+
+    public abstract Object toInstance(HashMap<String, Object> asMap) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException;
+
+    public SpaceTypeDescriptor getTypeDescriptor() {
+        return typeDescriptor;
+    }
 }
 

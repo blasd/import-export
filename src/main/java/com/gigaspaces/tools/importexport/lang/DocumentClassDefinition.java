@@ -40,4 +40,12 @@ public class DocumentClassDefinition extends SpaceClassDefinition implements Ser
         String routingPropertyName = typeDescriptor.getRoutingPropertyName();
         return ((SpaceDocument) instance).getProperty(routingPropertyName);
     }
+
+    @Override
+    public Object toInstance(HashMap<String, Object> asMap) {
+        SpaceDocument spaceDocument = new SpaceDocument(this.className);
+        spaceDocument.addProperties(asMap);
+
+        return spaceDocument;
+    }
 }

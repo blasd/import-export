@@ -5,18 +5,14 @@ import java.io.Serializable;
 public class ThreadAudit implements Serializable {
     private static final long serialVersionUID = 7139939706151192186L;
 
-    private String className;
-    private Integer partitionId;
-    private int newPartitionId;
     private long start;
     private long stop;
     private long count;
     private Exception exception;
+    private String fileName;
 
-    public ThreadAudit(String className, Integer partitionId, int newPartitionId) {
-        this.className = className;
-        this.partitionId = partitionId;
-        this.newPartitionId = newPartitionId;
+    public ThreadAudit(String fileName){
+        this.fileName = fileName;
     }
 
     public void start() {
@@ -36,7 +32,7 @@ public class ThreadAudit implements Serializable {
     }
 
     public String getFileName() {
-        return className + "." + partitionId + "." + newPartitionId + ".ser.gz";
+        return this.fileName;
     }
 
     public long getTime() {

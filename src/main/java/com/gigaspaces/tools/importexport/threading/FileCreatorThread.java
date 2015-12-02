@@ -2,6 +2,7 @@ package com.gigaspaces.tools.importexport.threading;
 
 import com.gigaspaces.client.iterator.GSIteratorConfig;
 import com.gigaspaces.client.iterator.IteratorScope;
+import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.j_spaces.core.client.GSIterator;
@@ -36,7 +37,7 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
 
     @Override
     public ThreadAudit call() throws Exception {
-        ThreadAudit output = new ThreadAudit(className, partitionId, newPartitionId);
+        ThreadAudit output = new ThreadAudit(className + "." + partitionId + "." + newPartitionId + Constants.FILE_EXTENSION);
         output.start();
 
         try {
