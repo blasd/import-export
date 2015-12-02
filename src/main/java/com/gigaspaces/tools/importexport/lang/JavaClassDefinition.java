@@ -4,6 +4,7 @@ import com.gigaspaces.metadata.SpaceTypeDescriptor;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,11 +33,17 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
         Field[] fields = aClass.getDeclaredFields();
 
         for(Field currentField : fields){
+            if(!canBeSet(currentField)) continue;
+
             currentField.setAccessible(true);
             output.put(currentField.getName(), currentField.get(instance));
         }
 
         return output;
+    }
+
+    private boolean canBeSet(Field currentField) {
+        return !Modifier.isFinal(currentField.getModifiers());
     }
 
     @Override
@@ -59,6 +66,9 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 
         for(Map.Entry<String, Object> property : asMap.entrySet()){
             Field field = aClass.getDeclaredField(property.getKey());
+
+            if(!canBeSet(field)) continue;
+
             field.setAccessible(true);
             field.set(output, property.getValue());
         }
