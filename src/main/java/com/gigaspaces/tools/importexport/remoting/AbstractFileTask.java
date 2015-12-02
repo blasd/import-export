@@ -32,6 +32,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     /** LRMI Class Loading Hack **/
     private FileCreatorThread creatorThread;
     private FileReaderThread readerThread;
+    private ThreadAudit threadAudit;
     /** LRMI Class Loading Hack **/
 
     @TaskGigaSpace
@@ -96,7 +97,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
 
                 futures.remove(0);
             } else {
-                Thread.sleep(1000);
+                Thread.sleep(config.getThreadSleepMilliseconds());
             }
         }
     }
