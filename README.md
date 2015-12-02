@@ -31,7 +31,7 @@ mvn clean package
 ```
 
 ##### Running
- 1. Copy the newly build export-import-1.0.SNAPSHOT.jar into the lib directory.
+ 1. Copy the newly built export-import-1.0.SNAPSHOT.jar into the lib directory.
  2. Create a Shell, Batch, or Powershell script with the following
 
 ```sh
