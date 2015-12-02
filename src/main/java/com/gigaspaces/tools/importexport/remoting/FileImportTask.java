@@ -1,7 +1,5 @@
 package com.gigaspaces.tools.importexport.remoting;
 
-import com.gigaspaces.metadata.SpaceTypeDescriptor;
-import com.gigaspaces.metadata.SpaceTypeDescriptorBuilder;
 import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.threading.FileReaderThread;
