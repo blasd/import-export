@@ -83,6 +83,7 @@ public class Program {
         builder.append(String.format("\tPartition Id: %s\n", result.getPartitionId()));
         builder.append(String.format("\tProcess Id: %s\n", result.getProcessId()));
         builder.append(String.format("\tHostname: %s\n", result.getHostName()));
+        builder.append(String.format("\tElapsed Process Time (ms): %s\n", result.getElapsedTime()));
 
         if(result.getAudits() != null && !result.getAudits().isEmpty()) {
             builder.append("\n\tFiles:\n");

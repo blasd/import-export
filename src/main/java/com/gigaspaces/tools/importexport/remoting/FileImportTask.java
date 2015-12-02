@@ -31,7 +31,7 @@ public class FileImportTask extends AbstractFileTask {
                 threads.add(new FileReaderThread(space, config, map.getKey(), map.getValue()));
             }
 
-            waitOnThreads(output, 50, threads);
+            waitOnThreads(output, threads);
 
         } catch(Exception ex){
             output.setException(ex);

@@ -13,6 +13,8 @@ public class RemoteTaskResult implements Serializable {
     private Integer partitionId;
     private Exception exception;
     private Collection<ThreadAudit> audits;
+    private long start;
+    private long stop;
 
     public String getHostName() {
         return hostName;
@@ -52,6 +54,18 @@ public class RemoteTaskResult implements Serializable {
 
     public void setAudits(Collection<ThreadAudit> audits) {
         this.audits = audits;
+    }
+
+    public void start() {
+        this.start = System.currentTimeMillis();
+    }
+
+    public void stop() {
+        this.stop = System.currentTimeMillis();
+    }
+
+    public long getElapsedTime() {
+        return this.stop - this.start;
     }
 }
 

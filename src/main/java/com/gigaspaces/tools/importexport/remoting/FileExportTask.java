@@ -26,6 +26,7 @@ public class FileExportTask extends AbstractFileTask {
     @Override
     public RemoteTaskResult execute() throws Exception {
         RemoteTaskResult output = new RemoteTaskResult();
+        output.start();
         try {
             configureOutput(output);
             Collection<String> classNames = getClassList(space.getSpace());
@@ -40,12 +41,12 @@ public class FileExportTask extends AbstractFileTask {
                 }
             }
 
-            waitOnThreads(output, classNames.size(), threads);
+            waitOnThreads(output, threads);
 
         } catch(Exception ex){
             output.setException(ex);
         }
-
+        output.stop();
         return output;
     }
 

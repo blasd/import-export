@@ -47,6 +47,9 @@ public class ExportConfiguration implements Serializable {
     @Parameter(names = {"--thread-sleep"}, description = "Number of milliseconds to sleep between checks for task completion.")
     private Integer threadSleepMilliseconds = 1000;
 
+    @Parameter(names = { "-t", "--threads" }, description = "")
+    private Integer threadCount = 20;
+
     public Integer getNewPartitionCount() {
         return newPartitionCount;
     }
@@ -168,5 +171,13 @@ public class ExportConfiguration implements Serializable {
         output.append("Thread sleep ms: ").append(threadSleepMilliseconds).append("]\n");
 
         return output.toString();
+    }
+
+    public Integer getThreadCount() {
+        return threadCount;
+    }
+
+    public void setThreadCount(Integer threadCount) {
+        this.threadCount = threadCount;
     }
 }

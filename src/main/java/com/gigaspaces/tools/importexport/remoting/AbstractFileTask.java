@@ -78,8 +78,8 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
         }
     }
 
-    protected final void waitOnThreads(RemoteTaskResult taskResult, int classCount, Collection<Callable<ThreadAudit>> threads) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(classCount);
+    protected final void waitOnThreads(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.getThreadCount());
         List<Future<ThreadAudit>> futures = executorService.invokeAll(threads);
 
         while(!futures.isEmpty()){
