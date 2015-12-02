@@ -168,6 +168,7 @@ public class ExportConfiguration implements Serializable {
         output.append("Export/Import Classes: '").append(classes).append("', ");
         output.append("XAP Read Batch Size: ").append(batch).append(", ");
         output.append("New partition count: ").append(newPartitionCount == 0 ? "Not specified" : newPartitionCount).append(", ");
+        output.append("Threads: ").append(threadCount).append(", ");
         output.append("Thread sleep ms: ").append(threadSleepMilliseconds).append("]\n");
 
         return output.toString();
