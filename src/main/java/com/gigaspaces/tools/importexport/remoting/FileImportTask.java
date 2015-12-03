@@ -20,21 +20,12 @@ public class FileImportTask extends AbstractFileTask {
     }
 
     @Override
-    public RemoteTaskResult execute() throws Exception {
-        RemoteTaskResult output = new RemoteTaskResult();
-        try {
-            configureOutput(output);
-            Collection<Map.Entry<String, String>> filesToProcess = evaluateFilesToProcess();
-            Collection<Callable<ThreadAudit>> threads = new ArrayList<>();
+    public Collection<Callable<ThreadAudit>> execute(RemoteTaskResult taskResult) throws Exception {
+        Collection<Callable<ThreadAudit>> output = new ArrayList<>();
+        Collection<Map.Entry<String, String>> filesToProcess = evaluateFilesToProcess();
 
-            for (Map.Entry<String, String> map : filesToProcess) {
-                threads.add(new FileReaderThread(space, config, map.getKey(), map.getValue()));
-            }
-
-            waitOnThreads(output, threads);
-
-        } catch(Exception ex){
-            output.getExceptions().add(ex);
+        for (Map.Entry<String, String> map : filesToProcess) {
+            output.add(new FileReaderThread(space, config, map.getKey(), map.getValue()));
         }
 
         return output;
@@ -56,14 +47,14 @@ public class FileImportTask extends AbstractFileTask {
                     continue;
                 }
 
-                warmUpSpace(className);
+                preLoadTypeDescriptors(className);
                 output.add(new AbstractMap.SimpleEntry<>(className, name));
             }
         }
         return output;
     }
 
-    private void warmUpSpace(String className) {
+    private void preLoadTypeDescriptors(String className) {
         try {
             Class<?> aClass = Class.forName(className);
             space.getTypeManager().registerTypeDescriptor(aClass);

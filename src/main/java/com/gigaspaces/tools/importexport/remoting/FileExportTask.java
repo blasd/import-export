@@ -24,29 +24,18 @@ public class FileExportTask extends AbstractFileTask {
     }
 
     @Override
-    public RemoteTaskResult execute() throws Exception {
-        RemoteTaskResult output = new RemoteTaskResult();
-        output.start();
-        try {
-            configureOutput(output);
-            Collection<String> classNames = getClassList(space.getSpace());
+    public Collection<Callable<ThreadAudit>> execute(RemoteTaskResult taskResult) throws Exception {
+        Collection<Callable<ThreadAudit>> output = new ArrayList<>();
+        Collection<String> classNames = getClassList(space.getSpace());
 
-            Collection<Callable<ThreadAudit>> threads = new ArrayList<>();
+        for (String className : classNames) {
+            if(JAVA_LANG_OBJECT.equals(className)) continue;
 
-            for (String className : classNames) {
-                if(JAVA_LANG_OBJECT.equals(className)) continue;
-                
-                for (int x = 1; x <= newPartitionCount; x++) {
-                    threads.add(new FileCreatorThread(space, config, className, this.clusterInfo.getInstanceId(), x, newPartitionCount));
-                }
+            for (int x = 1; x <= newPartitionCount; x++) {
+                output.add(new FileCreatorThread(space, config, className, this.clusterInfo.getInstanceId(), x, newPartitionCount));
             }
-
-            waitOnThreads(output, threads);
-
-        } catch(Exception ex){
-            output.getExceptions().add(ex);
         }
-        output.stop();
+
         return output;
     }
 

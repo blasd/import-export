@@ -3,6 +3,7 @@ package com.gigaspaces.tools.importexport.remoting;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class RemoteTaskResult implements Serializable {
@@ -15,6 +16,11 @@ public class RemoteTaskResult implements Serializable {
     private Collection<ThreadAudit> audits;
     private long start;
     private long stop;
+
+    public RemoteTaskResult() {
+        exceptions = new ArrayList<>();
+        audits= new ArrayList<>();
+    }
 
     public String getHostName() {
         return hostName;

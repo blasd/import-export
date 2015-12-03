@@ -1,5 +1,6 @@
 package com.gigaspaces.tools.importexport.remoting;
 
+import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
@@ -14,20 +15,22 @@ import org.openspaces.core.executor.Task;
 import org.openspaces.core.executor.TaskGigaSpace;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.*;
 
 /**
  * Created by skyler on 12/1/2015.
  */
-public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serializable, ClusterInfoAware {
+public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serializable, ClusterInfoAware, Callable<HashMap<String, Object>> {
     private static final long serialVersionUID = -8253008691316469029L;
+    public static final String HOST_NAME_KEY = "__HOST_NAME";
+    public static final String PROCESS_ID = "__PROCESS_ID";
+    protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
+
     protected ExportConfiguration config;
     protected ClusterInfo clusterInfo;
-
-    protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
 
     @TaskGigaSpace
     protected GigaSpace space;
@@ -41,12 +44,36 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
         this.clusterInfo = clusterInfo;
     }
 
-    protected final void configureOutput(RemoteTaskResult output) throws Exception {
-        output.setExceptions(new ArrayList<Exception>());
+    @Override
+    public final RemoteTaskResult execute(){
+        RemoteTaskResult output = new RemoteTaskResult();
+        output.start();
         output.setPartitionId(this.clusterInfo.getInstanceId());
-        output.setAudits(new ArrayList<ThreadAudit>());
 
+        try {
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            Future<HashMap<String, Object>> gatheringMachineInfo = executorService.submit(this);
+            Collection<Callable<ThreadAudit>> threads = execute(output);
+            waitOnThreads(output, threads);
+
+            HashMap<String, Object> machineInfo = gatheringMachineInfo.get();
+            output.setHostName((String)machineInfo.get(HOST_NAME_KEY));
+            output.setProcessId((Long)machineInfo.get(PROCESS_ID));
+        } catch(Exception ex){
+            output.getExceptions().add(ex);
+        }
+
+        output.stop();
+        return output;
+    }
+
+    protected abstract Collection<Callable<ThreadAudit>> execute(RemoteTaskResult output) throws Exception;
+
+    @Override
+    public HashMap<String, Object> call() {
+        HashMap<String, Object> output = new HashMap<>();
         SpaceConnectionFactory connections = new SpaceConnectionFactory(config);
+
         try {
             Admin spaceAdmin = connections.createAdmin();
             ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(space.getName());
@@ -64,17 +91,23 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             }
 
             GridServiceContainer gridServiceContainer = thisInstance.getGridServiceContainer();
-            output.setHostName(gridServiceContainer.getMachine().getHostName());
-            output.setProcessId(gridServiceContainer.getVirtualMachine().getDetails().getPid());
+            output.put(HOST_NAME_KEY, gridServiceContainer.getMachine().getHostName());
+            output.put(PROCESS_ID, gridServiceContainer.getVirtualMachine().getDetails().getPid());
         } catch (Exception ex){
             throw ex;
         }
         finally {
-            connections.close();
+            try {
+                connections.close();
+            }catch(Exception ex){
+
+            }
         }
+
+        return output;
     }
 
-    protected final void waitOnThreads(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
+    private void waitOnThreads(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
         ExecutorService executorService = Executors.newFixedThreadPool(config.getThreadCount());
         List<Future<ThreadAudit>> futures = executorService.invokeAll(threads);
 
