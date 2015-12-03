@@ -1,5 +1,10 @@
 package com.gigaspaces.tools.importexport;
 
+import com.gigaspaces.annotation.pojo.FifoSupport;
+import com.gigaspaces.metadata.SpaceTypeDescriptor;
+import com.gigaspaces.metadata.SpaceTypeDescriptorBuilder;
+import com.gigaspaces.metadata.index.SpaceIndex;
+import com.gigaspaces.metadata.index.SpacePathIndex;
 import com.gigaspaces.tools.importexport.model.Person;
 import org.junit.After;
 import org.junit.Assert;
@@ -14,6 +19,7 @@ import org.openspaces.admin.space.SpaceDeployment;
 import org.openspaces.core.GigaSpace;
 
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ImportExportTest {
@@ -78,6 +84,30 @@ public class ImportExportTest {
         Space space = processingUnit.waitForSpace();
         space.waitFor(instances);
         return space.getGigaSpace();
+    }
+
+
+    public void testing() {
+        SpaceTypeDescriptorBuilder builder = new SpaceTypeDescriptorBuilder("");
+//        builder.addFixedProperty()
+//        spaceTypeDescriptorBuilder.addFixedProperty()
+
+//            builder.supports
+//          builder.get
+//        spaceTypeDescriptorBuilder.addIndex(new SpacePathIndex("", ));
+//        spaceTypeDescriptorBuilder.supportsDynamicProperties()
+//
+//                SpaceTypeDescriptor d = null;
+//
+//        Map<String, SpaceIndex> indexes = d.getIndexes();
+//
+//        String idPropertyName = d.getIdPropertyName();
+//        String routingPropertyName = d.getRoutingPropertyName();
+//        FifoSupport fifoSupport = d.getFifoSupport();
+//        d.supports
+//        d.getStorageType()
+//        fifoSupport.
+
     }
 
 }

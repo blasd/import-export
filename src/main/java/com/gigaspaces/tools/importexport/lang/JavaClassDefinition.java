@@ -1,7 +1,5 @@
 package com.gigaspaces.tools.importexport.lang;
 
-import com.gigaspaces.metadata.SpaceTypeDescriptor;
-
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -15,9 +13,8 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
     private static final long serialVersionUID = 4910571443452951970L;
     private transient Field routingField;
 
-    public JavaClassDefinition(String className, SpaceTypeDescriptor typeDescriptor) {
-        this.className = className;
-        this.typeDescriptor = typeDescriptor;
+    public JavaClassDefinition(String className, VersionSafeDescriptor typeDescriptor){
+        super(className, typeDescriptor);
     }
 
     @Override

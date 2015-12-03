@@ -3,6 +3,7 @@ package com.gigaspaces.tools.importexport.threading;
 import com.gigaspaces.client.WriteModifiers;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
+import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 import org.openspaces.core.GigaSpace;
 
 import java.io.BufferedInputStream;
@@ -44,7 +45,8 @@ public class FileReaderThread implements Callable<ThreadAudit> {
                 int recordCount = input.readInt();
                 output.setCount(recordCount);
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
-                space.getTypeManager().registerTypeDescriptor(classDefinition.getTypeDescriptor());
+                VersionSafeDescriptor typeDescriptor = classDefinition.getTypeDescriptor();
+                space.getTypeManager().registerTypeDescriptor(typeDescriptor.toSpaceTypeDescriptor());
 
                 Collection<Object> spaceInstances = new ArrayList<>();
 

@@ -3,6 +3,7 @@ package com.gigaspaces.tools.importexport.remoting;
 import com.gigaspaces.tools.importexport.lang.DocumentClassDefinition;
 import com.gigaspaces.tools.importexport.lang.JavaClassDefinition;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
+import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 import com.gigaspaces.tools.importexport.threading.FileCreatorThread;
 import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
@@ -22,6 +23,7 @@ public class LRMIClassLoadHacker implements Serializable {
     private SpaceClassDefinition spaceClassDefinition;
     private JavaClassDefinition javaClassDefinition;
     private DocumentClassDefinition documentClassDefinition;
+    private VersionSafeDescriptor versionSafeDescriptor;
 
     /** LRMI Class Loading Hack **/
 }

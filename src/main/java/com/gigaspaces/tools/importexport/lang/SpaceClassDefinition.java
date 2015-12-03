@@ -13,16 +13,22 @@ public  abstract class SpaceClassDefinition implements Serializable {
     private static final long serialVersionUID = 711154255702510496L;
 
     protected String className;
-    protected SpaceTypeDescriptor typeDescriptor;
+    protected VersionSafeDescriptor typeDescriptor;
+
+    public SpaceClassDefinition(String className, VersionSafeDescriptor typeDescriptor){
+        this.className = className;
+        this.typeDescriptor = typeDescriptor;
+    }
 
     public static SpaceClassDefinition create(GigaSpace space, String className){
         SpaceClassDefinition output;
         SpaceTypeDescriptor typeDescriptor = space.getTypeManager().getTypeDescriptor(className);
+        VersionSafeDescriptor versionSafeDescriptor = VersionSafeDescriptor.create(typeDescriptor);
 
         if(!typeDescriptor.isConcreteType()){
-            output = new DocumentClassDefinition(className, typeDescriptor);
+            output = new DocumentClassDefinition(className, versionSafeDescriptor);
         } else {
-            output = new JavaClassDefinition(className, typeDescriptor);
+            output = new JavaClassDefinition(className, versionSafeDescriptor);
         }
 
         return output;
@@ -36,8 +42,8 @@ public  abstract class SpaceClassDefinition implements Serializable {
 
     public abstract Object toInstance(HashMap<String, Object> asMap) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException;
 
-    public SpaceTypeDescriptor getTypeDescriptor() {
-        return typeDescriptor;
+    public VersionSafeDescriptor getTypeDescriptor() {
+        return this.typeDescriptor;
     }
 }
 

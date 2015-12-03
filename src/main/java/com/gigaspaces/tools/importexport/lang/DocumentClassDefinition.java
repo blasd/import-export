@@ -11,9 +11,8 @@ public class DocumentClassDefinition extends SpaceClassDefinition implements Ser
 
     private static final long serialVersionUID = -1095159043221713221L;
 
-    public DocumentClassDefinition(String className, SpaceTypeDescriptor typeDescriptor) {
-        this.className = className;
-        this.typeDescriptor = typeDescriptor;
+    public DocumentClassDefinition(String className, VersionSafeDescriptor typeDescriptor) {
+        super(className, typeDescriptor);
     }
 
     @Override
