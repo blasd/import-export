@@ -47,8 +47,11 @@ public class ExportConfiguration implements Serializable {
     @Parameter(names = {"--thread-sleep"}, description = "Number of milliseconds to sleep between checks for task completion.")
     private Integer threadSleepMilliseconds = 1000;
 
-    @Parameter(names = { "-t", "--threads" }, description = "")
+    @Parameter(names = { "-t", "--threads" }, description = "Number of threads to simultaneously process import or export files.")
     private Integer threadCount = 20;
+
+    @Parameter(names = { "--pu-name" }, description = "Overrides the name of the processing unit, relevant only when the processing unit is different from space name.")
+    private String processingUnitName;
 
     public Integer getNewPartitionCount() {
         return newPartitionCount;
@@ -180,5 +183,13 @@ public class ExportConfiguration implements Serializable {
 
     public void setThreadCount(Integer threadCount) {
         this.threadCount = threadCount;
+    }
+
+    public String getProcessingUnitName() {
+        return processingUnitName == null ? name : processingUnitName;
+    }
+
+    public void setProcessingUnitName(String processingUnitName) {
+        this.processingUnitName = processingUnitName;
     }
 }

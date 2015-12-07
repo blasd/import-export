@@ -76,7 +76,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
 
         try {
             Admin spaceAdmin = connections.createAdmin();
-            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(space.getName());
+            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(config.getProcessingUnitName());
             processingUnit.waitFor(processingUnit.getTotalNumberOfInstances());
             ProcessingUnitInstance thisInstance = null;
 
