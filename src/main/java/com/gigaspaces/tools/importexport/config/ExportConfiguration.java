@@ -53,6 +53,9 @@ public class ExportConfiguration implements Serializable {
     @Parameter(names = { "--pu-name" }, description = "Overrides the name of the processing unit, relevant only when the processing unit is different from space name.")
     private String processingUnitName;
 
+    @Parameter(names = { "--security-level"}, description = "Indicates the level of security for the grid.")
+    private SecurityLevel security;
+
     public Integer getNewPartitionCount() {
         return newPartitionCount;
     }
@@ -170,6 +173,8 @@ public class ExportConfiguration implements Serializable {
         output.append("Operating Partitions: '").append(partitions).append("', ");
         output.append("Export/Import Classes: '").append(classes).append("', ");
         output.append("XAP Read Batch Size: ").append(batch).append(", ");
+        output.append("PU Name Override: ").append(processingUnitName).append(", ");
+        output.append("Security level: ").append(security).append(", ");
         output.append("New partition count: ").append(newPartitionCount == 0 ? "Not specified" : newPartitionCount).append(", ");
         output.append("Threads: ").append(threadCount).append(", ");
         output.append("Thread sleep ms: ").append(threadSleepMilliseconds).append("]\n");
@@ -191,5 +196,13 @@ public class ExportConfiguration implements Serializable {
 
     public void setProcessingUnitName(String processingUnitName) {
         this.processingUnitName = processingUnitName;
+    }
+
+    public SecurityLevel getSecurity() {
+        return security;
+    }
+
+    public void setSecurity(SecurityLevel security) {
+        this.security = security;
     }
 }

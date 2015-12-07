@@ -29,13 +29,6 @@ public class SpaceConnectionFactory {
         this.config = config;
     }
 
-    @Deprecated
-    public String buildSpaceURL(){
-
-
-        return "";
-    }
-
     public GigaSpace createProxy() {
 
         if(space == null) {
@@ -43,7 +36,7 @@ public class SpaceConnectionFactory {
             urlSpaceConfigurer.lookupLocators(join(config.getLocators()));
             urlSpaceConfigurer.lookupGroups(join(config.getGroups()));
 
-            if (!isNullOrEmpty(config.getUsername()) && !isNullOrEmpty(config.getPassword())) {
+            if ((!isNullOrEmpty(config.getUsername()) && !isNullOrEmpty(config.getPassword())) && isSecuredComponent(SecurityLevel.SPACE)) {
                 logger.info("Using secured connection.");
                 urlSpaceConfigurer.credentials(config.getUsername(), config.getPassword());
             }
@@ -57,6 +50,11 @@ public class SpaceConnectionFactory {
         }
 
         return space;
+    }
+
+    private boolean isSecuredComponent(SecurityLevel securityLevel) {
+        SecurityLevel configLevel = config.getSecurity();
+        return configLevel == SecurityLevel.BOTH || configLevel == securityLevel;
     }
 
     private String join(List<String> args) {
@@ -79,7 +77,7 @@ public class SpaceConnectionFactory {
             adminFactory.addGroups(join(config.getGroups()));
             adminFactory.addLocators(join(config.getLocators()));
 
-            if (!isNullOrEmpty(config.getUsername()) && !isNullOrEmpty(config.getPassword())) {
+            if ((!isNullOrEmpty(config.getUsername()) && !isNullOrEmpty(config.getPassword())) && isSecuredComponent(SecurityLevel.GRID)) {
                 logger.info("Using secured admin connection.");
                 adminFactory.credentials(config.getUsername(), config.getPassword());
             }

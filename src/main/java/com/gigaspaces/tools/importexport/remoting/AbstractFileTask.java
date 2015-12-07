@@ -1,6 +1,5 @@
 package com.gigaspaces.tools.importexport.remoting;
 
-import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
@@ -26,7 +25,8 @@ import java.util.concurrent.*;
 public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serializable, ClusterInfoAware, Callable<HashMap<String, Object>> {
     private static final long serialVersionUID = -8253008691316469029L;
     public static final String HOST_NAME_KEY = "__HOST_NAME";
-    public static final String PROCESS_ID = "__PROCESS_ID";
+    public static final String PROCESS_ID_KEY = "__PROCESS_ID";
+    private static final String EXCEPTION_KEY = "__EXCEPTION";
     protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
 
     protected ExportConfiguration config;
@@ -57,8 +57,13 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             waitOnThreads(output, threads);
 
             HashMap<String, Object> machineInfo = gatheringMachineInfo.get();
-            output.setHostName((String)machineInfo.get(HOST_NAME_KEY));
-            output.setProcessId((Long)machineInfo.get(PROCESS_ID));
+
+            if(!machineInfo.containsKey(EXCEPTION_KEY)) {
+                output.setHostName((String) machineInfo.get(HOST_NAME_KEY));
+                output.setProcessId((Long) machineInfo.get(PROCESS_ID_KEY));
+            } else {
+                output.getExceptions().add((Exception)machineInfo.get(EXCEPTION_KEY));
+            }
         } catch(Exception ex){
             output.getExceptions().add(ex);
         }
@@ -93,9 +98,9 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
 
             GridServiceContainer gridServiceContainer = thisInstance.getGridServiceContainer();
             output.put(HOST_NAME_KEY, gridServiceContainer.getMachine().getHostName());
-            output.put(PROCESS_ID, gridServiceContainer.getVirtualMachine().getDetails().getPid());
+            output.put(PROCESS_ID_KEY, gridServiceContainer.getVirtualMachine().getDetails().getPid());
         } catch (Exception ex){
-            throw ex;
+            output.put(EXCEPTION_KEY, ex);
         }
         finally {
             try {
