@@ -1,6 +1,7 @@
 package com.gigaspaces.tools.importexport.lang;
 
 import com.gigaspaces.metadata.SpaceTypeDescriptor;
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import org.openspaces.core.GigaSpace;
 
 import java.io.Serializable;
@@ -20,12 +21,12 @@ public  abstract class SpaceClassDefinition implements Serializable {
         this.typeDescriptor = typeDescriptor;
     }
 
-    public static SpaceClassDefinition create(GigaSpace space, String className){
+    public static SpaceClassDefinition create(GigaSpace space, ExportConfiguration configuration, String className){
         SpaceClassDefinition output;
         SpaceTypeDescriptor typeDescriptor = space.getTypeManager().getTypeDescriptor(className);
         VersionSafeDescriptor versionSafeDescriptor = VersionSafeDescriptor.create(typeDescriptor);
 
-        if(!typeDescriptor.isConcreteType()){
+        if(!typeDescriptor.isConcreteType() || configuration.isJarLess()){
             output = new DocumentClassDefinition(className, versionSafeDescriptor);
         } else {
             output = new JavaClassDefinition(className, versionSafeDescriptor);

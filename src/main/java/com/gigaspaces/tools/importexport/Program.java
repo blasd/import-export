@@ -85,8 +85,8 @@ public class Program {
         builder.append(String.format("\tHostname: %s\n", result.getHostName()));
         builder.append(String.format("\tElapsed Process Time (ms): %s\n", result.getElapsedTime()));
 
+        builder.append("\n\tFiles:\n");
         if(result.getAudits() != null && !result.getAudits().isEmpty()) {
-            builder.append("\n\tFiles:\n");
 
             for (ThreadAudit audit : result.getAudits()) {
 

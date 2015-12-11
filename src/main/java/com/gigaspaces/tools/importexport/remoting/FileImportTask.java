@@ -47,14 +47,16 @@ public class FileImportTask extends AbstractFileTask {
                     continue;
                 }
 
-                preLoadTypeDescriptors(className);
+                preLoadTypeDescriptors(className, config);
                 output.add(new AbstractMap.SimpleEntry<>(className, name));
             }
         }
         return output;
     }
 
-    private void preLoadTypeDescriptors(String className) {
+    private void preLoadTypeDescriptors(String className, ExportConfiguration configuration) {
+        if(configuration.isJarLess()) return; // We don't use jars all data will be loaded as a document.
+
         try {
             Class<?> aClass = Class.forName(className);
             space.getTypeManager().registerTypeDescriptor(aClass);

@@ -16,9 +16,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 public class FileCreatorThread implements Callable<ThreadAudit> {
+    private static final Logger _logger = Logger.getLogger(FileCreatorThread.class.getName());
     private GigaSpace space;
     private ExportConfiguration config;
     private String className;
@@ -38,13 +40,15 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
     @Override
     public ThreadAudit call() throws Exception {
         ThreadAudit output = new ThreadAudit(className + "." + partitionId + "." + newPartitionId + Constants.FILE_EXTENSION);
+        _logger.fine("Processing file: " + output.getFileName());
         output.start();
 
         try {
-            SpaceClassDefinition definition = SpaceClassDefinition.create(space, className);
+            SpaceClassDefinition definition = SpaceClassDefinition.create(space, config, className);
             List objects = readSpaceObjects(space, definition);
 
             if (objects != null && objects.size() > 0) {
+                _logger.fine("Record count: " + objects.size());
                 output.setCount(objects.size());
 
                 String filePath = config.getDirectory() + File.separator + output.getFileName();
@@ -60,6 +64,7 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
                 }
             }
         } catch(Exception ex){
+            _logger.fine("Exception encountered: " + ex.getMessage());
             output.setException(ex);
         }
 
@@ -81,8 +86,11 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             Object instance = gsIterator.next();
             Object routingValue = definition.getRoutingValue(instance);
 
-            if((routingValue.hashCode() % this.newPartitionSchema) + 1 == newPartitionId)
+            int realRoute = (routingValue.hashCode() % this.newPartitionSchema)  + 1;
+
+            if(realRoute == newPartitionId) {
                 output.add(instance);
+            }
         }
 
         return output;

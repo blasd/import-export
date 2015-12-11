@@ -11,8 +11,11 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class FileExportTask extends AbstractFileTask {
+    private static final Logger _logger = Logger.getLogger(FileExportTask.class.getName());
     private static final long serialVersionUID = 7132089756006051447L;
     private static final String JAVA_LANG_OBJECT = "java.lang.Object";
 
@@ -29,9 +32,11 @@ public class FileExportTask extends AbstractFileTask {
         Collection<String> classNames = getClassList(space.getSpace());
 
         for (String className : classNames) {
+            _logger.fine("Class name: " + className);
             if(JAVA_LANG_OBJECT.equals(className)) continue;
 
             for (int x = 1; x <= newPartitionCount; x++) {
+                _logger.fine("Iteration: " + className + " Partition: " + x);
                 output.add(new FileCreatorThread(space, config, className, this.clusterInfo.getInstanceId(), x, newPartitionCount));
             }
         }

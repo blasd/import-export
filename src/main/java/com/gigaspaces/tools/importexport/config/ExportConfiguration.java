@@ -56,6 +56,9 @@ public class ExportConfiguration implements Serializable {
     @Parameter(names = { "--security-level"}, description = "Indicates the level of security for the grid.")
     private SecurityLevel security;
 
+    @Parameter(names = { "--jarless"}, description = "Indicates that the import / export will not use Java class definitions during processing.")
+    private boolean jarLess;
+
     public Integer getNewPartitionCount() {
         return newPartitionCount;
     }
@@ -177,6 +180,7 @@ public class ExportConfiguration implements Serializable {
         output.append("Security level: ").append(security).append(", ");
         output.append("New partition count: ").append(newPartitionCount == 0 ? "Not specified" : newPartitionCount).append(", ");
         output.append("Threads: ").append(threadCount).append(", ");
+        output.append("Jarless: ").append(jarLess).append(", ");
         output.append("Thread sleep ms: ").append(threadSleepMilliseconds).append("]\n");
 
         return output.toString();
@@ -204,5 +208,13 @@ public class ExportConfiguration implements Serializable {
 
     public void setSecurity(SecurityLevel security) {
         this.security = security;
+    }
+
+    public boolean isJarLess() {
+        return jarLess;
+    }
+
+    public void setJarLess(boolean jarLess) {
+        this.jarLess = jarLess;
     }
 }
