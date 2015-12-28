@@ -2,6 +2,7 @@ package com.gigaspaces.tools.importexport.threading;
 
 import com.gigaspaces.client.WriteModifiers;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
+import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 import org.openspaces.core.GigaSpace;
@@ -9,7 +10,6 @@ import org.openspaces.core.GigaSpace;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,8 +38,7 @@ public class FileReaderThread implements Callable<ThreadAudit> {
         output.start();
 
         try {
-            try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath())));
-                 ObjectInputStream input = new ObjectInputStream(zis)) {
+            try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath()))); CustomObjectInputStream input = new CustomObjectInputStream(zis)) {
 
                 input.readUTF(); // Throw away value this is just the class name and we already have it.
                 int recordCount = input.readInt();
@@ -51,7 +50,6 @@ public class FileReaderThread implements Callable<ThreadAudit> {
                 Collection<Object> spaceInstances = new ArrayList<>();
 
                 for(int x = 0; x < recordCount; x++){
-
                     spaceInstances.add(classDefinition.toInstance((HashMap<String, Object>) input.readObject()));
 
                     if((x % config.getBatch() == 1) || (x == recordCount - 1)){

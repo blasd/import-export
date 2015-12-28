@@ -47,7 +47,7 @@ public class FileImportTask extends AbstractFileTask {
                     continue;
                 }
 
-                preLoadTypeDescriptors(className, config);
+               // preLoadTypeDescriptors(className, config);
                 output.add(new AbstractMap.SimpleEntry<>(className, name));
             }
         }
@@ -59,6 +59,8 @@ public class FileImportTask extends AbstractFileTask {
 
         try {
             Class<?> aClass = Class.forName(className);
+
+//            aClass.
             space.getTypeManager().registerTypeDescriptor(aClass);
         } catch(ClassNotFoundException ex){
             // Ignore, it might be a space document.

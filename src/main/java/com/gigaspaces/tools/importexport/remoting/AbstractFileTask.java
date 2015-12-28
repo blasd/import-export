@@ -2,7 +2,6 @@ package com.gigaspaces.tools.importexport.remoting;
 
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
-import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.gsc.GridServiceContainer;
@@ -55,7 +54,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             Future<HashMap<String, Object>> gatheringMachineInfo = executorService.submit(this);
             Collection<Callable<ThreadAudit>> threads = execute(output);
-            waitOnThreads(output, threads);
+            processThreadResults(output, threads);
 
             HashMap<String, Object> machineInfo = gatheringMachineInfo.get();
 
@@ -114,7 +113,24 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
         return output;
     }
 
-    private void waitOnThreads(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
+    private void processThreadResults(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
+        if(config.getThreadCount() > 0){
+            invokeAll(taskResult, threads);
+        } else {
+            invokeEach(taskResult, threads);
+        }
+    }
+
+    private void invokeEach(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
+        for(Callable<ThreadAudit> thread : threads){
+            ThreadAudit result = thread.call();
+
+            if(result != null)
+                taskResult.getAudits().add(result);
+        }
+    }
+
+    private void invokeAll(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
         ExecutorService executorService = null;
 
         try {

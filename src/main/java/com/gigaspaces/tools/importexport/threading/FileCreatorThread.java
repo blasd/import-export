@@ -54,6 +54,7 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
                 String filePath = config.getDirectory() + File.separator + output.getFileName();
                 try (GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)));
                      ObjectOutputStream oos = new ObjectOutputStream(zos)) {
+
                     oos.writeUTF(className);
                     oos.writeInt(objects.size());
                     oos.writeObject(definition);
