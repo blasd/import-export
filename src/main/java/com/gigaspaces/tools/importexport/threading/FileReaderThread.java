@@ -39,8 +39,7 @@ public class FileReaderThread implements Callable<ThreadAudit> {
 
         try {
             try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath()))); CustomObjectInputStream input = new CustomObjectInputStream(zis)) {
-
-                input.readUTF(); // Throw away value this is just the class name and we already have it.
+                validateFileNameAndType(input.readUTF());
                 int recordCount = input.readInt();
                 output.setCount(recordCount);
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
@@ -63,6 +62,12 @@ public class FileReaderThread implements Callable<ThreadAudit> {
 
         output.stop();
         return output;
+    }
+
+    private void validateFileNameAndType(String className) {
+        if(!className.equals(this.className)){
+            throw new SecurityException(String.format("File name prefix does not match the encoded class name (case-sensitive). File name (prefix): [%s] Serialized class name: [%s]", this.className, className));
+        }
     }
 
     private void flush(Collection<Object> spaceInstances) {
