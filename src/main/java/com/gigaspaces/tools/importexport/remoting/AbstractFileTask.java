@@ -2,6 +2,7 @@ package com.gigaspaces.tools.importexport.remoting;
 
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
+import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.gsc.GridServiceContainer;
@@ -114,25 +115,32 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     }
 
     private void waitOnThreads(RemoteTaskResult taskResult, Collection<Callable<ThreadAudit>> threads) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(config.getThreadCount());
-        List<Future<ThreadAudit>> futures = executorService.invokeAll(threads);
+        ExecutorService executorService = null;
 
-        while(!futures.isEmpty()){
-            Future<ThreadAudit> threadAuditFuture = futures.get(0);
-            if(threadAuditFuture.isDone() || threadAuditFuture.isCancelled()){
-                try {
-                    ThreadAudit threadAudit = threadAuditFuture.get();
+        try {
+            executorService = Executors.newFixedThreadPool(config.getThreadCount(), Executors.privilegedThreadFactory());
+            List<Future<ThreadAudit>> futures = executorService.invokeAll(threads);
 
-                    if(threadAudit != null)
-                        taskResult.getAudits().add(threadAudit);
-                } catch (ExecutionException ex){
-                    taskResult.getExceptions().add(ex);
+            while (!futures.isEmpty()) {
+                Future<ThreadAudit> threadAuditFuture = futures.get(0);
+                if (threadAuditFuture.isDone() || threadAuditFuture.isCancelled()) {
+                    try {
+                        ThreadAudit threadAudit = threadAuditFuture.get();
+
+                        if (threadAudit != null)
+                            taskResult.getAudits().add(threadAudit);
+                    } catch (ExecutionException ex) {
+                        taskResult.getExceptions().add(ex);
+                    }
+
+                    futures.remove(0);
+                } else {
+                    Thread.sleep(config.getThreadSleepMilliseconds());
                 }
-
-                futures.remove(0);
-            } else {
-                Thread.sleep(config.getThreadSleepMilliseconds());
             }
+        } finally {
+            if(executorService != null)
+                executorService.shutdown();
         }
     }
 }
