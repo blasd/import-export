@@ -1,5 +1,6 @@
 package com.gigaspaces.tools.importexport.remoting;
 
+import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
 import com.gigaspaces.tools.importexport.lang.DocumentClassDefinition;
 import com.gigaspaces.tools.importexport.lang.JavaClassDefinition;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
@@ -24,6 +25,7 @@ public class LRMIClassLoadHacker implements Serializable {
     private JavaClassDefinition javaClassDefinition;
     private DocumentClassDefinition documentClassDefinition;
     private VersionSafeDescriptor versionSafeDescriptor;
+    private CustomObjectInputStream customObjectInputStream;
 
     /** LRMI Class Loading Hack **/
 }

@@ -7,9 +7,7 @@ import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 import org.openspaces.core.GigaSpace;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,27 +38,49 @@ public class FileReaderThread implements Callable<ThreadAudit> {
         try {
             try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath()))); CustomObjectInputStream input = new CustomObjectInputStream(zis)) {
                 validateFileNameAndType(input.readUTF());
-                int recordCount = input.readInt();
-                output.setCount(recordCount);
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
                 VersionSafeDescriptor typeDescriptor = classDefinition.getTypeDescriptor();
                 space.getTypeManager().registerTypeDescriptor(typeDescriptor.toSpaceTypeDescriptor());
 
+                int recordCount = 0;
+
                 Collection<Object> spaceInstances = new ArrayList<>();
 
-                for(int x = 0; x < recordCount; x++){
-                    spaceInstances.add(classDefinition.toInstance((HashMap<String, Object>) input.readObject()));
+                Object record;
 
-                    if((x % config.getBatch() == 1) || (x == recordCount - 1)){
+                do {
+                    record = tryReadNextObject(input);
+
+                    if(record != null) {
+                        spaceInstances.add(classDefinition.toInstance((HashMap<String, Object>) record));
+                        recordCount++;
+                    }
+
+                    if((spaceInstances.size() > 0 && (spaceInstances.size() % config.getBatch() == 0)) || (spaceInstances.size() > 0 && record == null)){
                         flush(spaceInstances);
                     }
-                }
+                } while(record != null);
+
+                output.setCount(recordCount);
             }
         } catch (Exception ex) {
             output.setException(ex);
         }
 
         output.stop();
+        return output;
+    }
+
+    private Object tryReadNextObject(CustomObjectInputStream input) throws Exception {
+        Object output = null;
+        try {
+            output = input.readObject();
+        } catch (EOFException ex) {
+
+        } catch (OptionalDataException ex){
+
+        }
+
         return output;
     }
 

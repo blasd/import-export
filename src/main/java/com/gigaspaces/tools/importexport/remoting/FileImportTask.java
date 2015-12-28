@@ -54,19 +54,6 @@ public class FileImportTask extends AbstractFileTask {
         return output;
     }
 
-    private void preLoadTypeDescriptors(String className, ExportConfiguration configuration) {
-        if(configuration.isJarLess()) return; // We don't use jars all data will be loaded as a document.
-
-        try {
-            Class<?> aClass = Class.forName(className);
-
-//            aClass.
-            space.getTypeManager().registerTypeDescriptor(aClass);
-        } catch(ClassNotFoundException ex){
-            // Ignore, it might be a space document.
-        }
-    }
-
     private String getSuffixRegex() {
         return ".\\d+." + clusterInfo.getInstanceId() + Constants.FILE_EXTENSION;
     }

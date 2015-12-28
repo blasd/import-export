@@ -27,6 +27,9 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
     private Integer partitionId;
     private int newPartitionId;
     private Integer newPartitionSchema;
+    private GZIPOutputStream zippedOutputStream;
+    private ObjectOutputStream objectOutputStream;
+    private boolean fileInitialized = false;
 
     public FileCreatorThread(GigaSpace space, ExportConfiguration config, String className, Integer partitionId, int newPartitionId, Integer newPartitionSchema) {
         this.space = space;
@@ -45,36 +48,28 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
 
         try {
             SpaceClassDefinition definition = SpaceClassDefinition.create(space, config, className);
-            List objects = readSpaceObjects(space, definition);
-
-            if (objects != null && objects.size() > 0) {
-                _logger.fine("Record count: " + objects.size());
-                output.setCount(objects.size());
-
-                String filePath = config.getDirectory() + File.separator + output.getFileName();
-                try (GZIPOutputStream zos = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)));
-                     ObjectOutputStream oos = new ObjectOutputStream(zos)) {
-
-                    oos.writeUTF(className);
-                    oos.writeInt(objects.size());
-                    oos.writeObject(definition);
-
-                    for (Object instance : objects) {
-                        oos.writeObject(definition.toMap(instance));
-                    }
-                }
-            }
+            int recordCount = iterateSpaceObjects(space, definition, output);
+            _logger.fine("Record count: " + recordCount);
+            output.setCount(recordCount);
         } catch(Exception ex){
             _logger.fine("Exception encountered: " + ex.getMessage());
             output.setException(ex);
+        } finally {
+            if(zippedOutputStream != null){
+                zippedOutputStream.close();
+            }
+
+            if(objectOutputStream != null){
+                objectOutputStream.close();
+            }
         }
 
         output.stop();
         return output;
     }
 
-    private List readSpaceObjects(GigaSpace space, SpaceClassDefinition definition) throws Exception {
-        List output = new ArrayList();
+    private int iterateSpaceObjects(GigaSpace space, SpaceClassDefinition definition, ThreadAudit audit) throws Exception {
+        int output = 0;
 
         GSIteratorConfig gsIteratorConfig = new GSIteratorConfig();
         gsIteratorConfig.setBufferSize(config.getBatch()).setIteratorScope(IteratorScope.CURRENT);
@@ -87,14 +82,31 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             Object instance = gsIterator.next();
             Object routingValue = definition.getRoutingValue(instance);
 
-            int realRoute = (routingValue.hashCode() % this.newPartitionSchema)  + 1;
+            int realRoute = (routingValue.hashCode() % this.newPartitionSchema) + 1;
 
             if(realRoute == newPartitionId) {
-                output.add(instance);
+                writeToFile(instance, definition, audit);
+                output++;
             }
         }
 
         return output;
+    }
+
+    private void writeToFile(Object instance, SpaceClassDefinition definition, ThreadAudit audit) throws Exception {
+        ensureFileInitialized(definition, audit);
+        objectOutputStream.writeObject(definition.toMap(instance));
+    }
+
+    private void ensureFileInitialized(SpaceClassDefinition definition, ThreadAudit audit) throws Exception {
+        if(!fileInitialized) {
+            String filePath = config.getDirectory() + File.separator + audit.getFileName();
+            zippedOutputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)));
+            objectOutputStream = new ObjectOutputStream(zippedOutputStream);
+            objectOutputStream.writeUTF(className);
+            objectOutputStream.writeObject(definition);
+            fileInitialized = true;
+        }
     }
 }
 
