@@ -62,6 +62,8 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             if(objectOutputStream != null){
                 objectOutputStream.close();
             }
+
+            fileInitialized = false;
         }
 
         output.stop();
