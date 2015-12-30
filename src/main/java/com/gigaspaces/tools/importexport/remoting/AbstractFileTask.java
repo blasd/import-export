@@ -50,8 +50,9 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
         output.start();
         output.setPartitionId(this.clusterInfo.getInstanceId());
 
+        ExecutorService executorService = null;
         try {
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            executorService = Executors.newSingleThreadExecutor();
             Future<HashMap<String, Object>> gatheringMachineInfo = executorService.submit(this);
             Collection<Callable<ThreadAudit>> threads = execute(output);
             processThreadResults(output, threads);
@@ -66,6 +67,8 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             }
         } catch(Exception ex){
             output.getExceptions().add(ex);
+        } finally {
+            if(executorService != null) executorService.shutdown();
         }
 
         output.stop();
@@ -154,6 +157,8 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
                     Thread.sleep(config.getThreadSleepMilliseconds());
                 }
             }
+        } catch(Exception ex) {
+            taskResult.getExceptions().add(ex);
         } finally {
             if(executorService != null)
                 executorService.shutdown();
