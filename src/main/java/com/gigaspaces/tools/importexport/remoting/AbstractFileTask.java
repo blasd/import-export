@@ -90,7 +90,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
 
             for (ProcessingUnitInstance instance : processingUnit.getInstances()) {
                 ClusterInfo clusterInfo = instance.getClusterInfo();
-                if (this.clusterInfo.getInstanceId().equals(clusterInfo.getInstanceId())) {
+                if (this.clusterInfo.getInstanceId().equals(clusterInfo.getInstanceId()) && clusterInfo.getBackupId() == null) {
                     thisInstance = instance;
                 }
             }
