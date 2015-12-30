@@ -1,5 +1,7 @@
 package com.gigaspaces.tools.importexport.lang;
 
+import com.j_spaces.core.client.SQLQuery;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -19,7 +21,7 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 
     @Override
     public  Object toTemplate() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        return Class.forName(this.className).newInstance();
+        return new SQLQuery<>(Class.forName(this.className), "");
     }
 
     @Override

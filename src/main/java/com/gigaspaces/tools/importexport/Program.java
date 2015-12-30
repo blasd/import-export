@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class Program {
-    private static final String SYSTEM_LOGGER_KEY = "import-export";
-    private static Logger logger = Logger.getLogger(SYSTEM_LOGGER_KEY);
+    private static Logger logger = Logger.getLogger(Constants.LOGGER_NAME);
 
 	public static void main(String[] args) {
         Program p = new Program();

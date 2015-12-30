@@ -14,13 +14,12 @@ import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 public class FileCreatorThread implements Callable<ThreadAudit> {
-    private static final Logger _logger = Logger.getLogger(FileCreatorThread.class.getName());
+    private static Logger logger = Logger.getLogger(Constants.LOGGER_NAME);
     private GigaSpace space;
     private ExportConfiguration config;
     private String className;
@@ -43,16 +42,16 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
     @Override
     public ThreadAudit call() throws Exception {
         ThreadAudit output = new ThreadAudit(className + "." + partitionId + "." + newPartitionId + Constants.FILE_EXTENSION);
-        _logger.fine("Processing file: " + output.getFileName());
+        log(output, "Processing started.");
         output.start();
 
         try {
             SpaceClassDefinition definition = SpaceClassDefinition.create(space, config, className);
             int recordCount = iterateSpaceObjects(space, definition, output);
-            _logger.fine("Record count: " + recordCount);
+            log(output, "Found " + recordCount + " records.");
             output.setCount(recordCount);
-        } catch(Exception ex){
-            _logger.fine("Exception encountered: " + ex.getMessage());
+        } catch (Exception ex) {
+            log(output, "Exception: " + ex.getMessage());
             output.setException(ex);
         } finally {
             if(zippedOutputStream != null){
@@ -84,7 +83,8 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             Object instance = gsIterator.next();
             Object routingValue = definition.getRoutingValue(instance);
 
-            int realRoute = (routingValue.hashCode() % this.newPartitionSchema) + 1;
+            int hashCode = adjustNegativeHashCodes(routingValue.hashCode());
+            int realRoute = (hashCode % this.newPartitionSchema) + 1;
 
             if(realRoute == newPartitionId) {
                 writeToFile(instance, definition, audit);
@@ -93,6 +93,10 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
         }
 
         return output;
+    }
+
+    private int adjustNegativeHashCodes(int hashCode) {
+        return hashCode == Integer.MIN_VALUE ? Integer.MAX_VALUE : Math.abs(hashCode);
     }
 
     private void writeToFile(Object instance, SpaceClassDefinition definition, ThreadAudit audit) throws Exception {
@@ -109,6 +113,10 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             objectOutputStream.writeObject(definition);
             fileInitialized = true;
         }
+    }
+
+    private void log(ThreadAudit output, String message) {
+        logger.info(String.format("%s -- %s", output.getFileName(), message));
     }
 }
 

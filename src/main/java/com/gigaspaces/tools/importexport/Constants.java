@@ -5,4 +5,5 @@ package com.gigaspaces.tools.importexport;
  */
 public final class Constants {
     public static final String FILE_EXTENSION = ".ser.gz";
+    public static final String LOGGER_NAME = "gigapro-exportimport";
 }

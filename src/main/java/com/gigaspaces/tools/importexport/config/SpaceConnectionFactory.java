@@ -1,5 +1,6 @@
 package com.gigaspaces.tools.importexport.config;
 
+import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.remoting.RouteTranslator;
 import com.google.common.base.Joiner;
 import com.j_spaces.core.IJSpace;
@@ -16,7 +17,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 public class SpaceConnectionFactory {
 
-    private static Logger logger = Logger.getLogger(SpaceConnectionFactory.class.getName());
+    private static Logger logger = Logger.getLogger(Constants.LOGGER_NAME);
     private static final int LOOKUP_TIMEOUT = 2000;
 
     private ExportConfiguration config;
