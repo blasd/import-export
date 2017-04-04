@@ -79,7 +79,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
 
     @Override
     public HashMap<String, Object> call() {
-        HashMap<String, Object> output = new HashMap<>();
+        HashMap<String, Object> output = new HashMap<String, Object>();
         SpaceConnectionFactory connections = new SpaceConnectionFactory(config);
 
         try {

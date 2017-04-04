@@ -22,7 +22,7 @@ public class DocumentClassDefinition extends SpaceClassDefinition implements Ser
 
     @Override
     public HashMap<String, Object> toMap(Object instance) throws ClassNotFoundException, IllegalAccessException {
-        HashMap<String, Object> output = new HashMap<>();
+        HashMap<String, Object> output = new HashMap<String, Object>();
 
         SpaceDocument asDocument = (SpaceDocument) instance;
         Map<String, Object> properties = asDocument.getProperties();

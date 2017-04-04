@@ -18,8 +18,8 @@ public class RemoteTaskResult implements Serializable {
     private long stop;
 
     public RemoteTaskResult() {
-        exceptions = new ArrayList<>();
-        audits= new ArrayList<>();
+        exceptions = new ArrayList<Exception>();
+        audits= new ArrayList<ThreadAudit>();
     }
 
     public String getHostName() {

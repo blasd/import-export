@@ -28,7 +28,7 @@ public class FileExportTask extends AbstractFileTask {
 
     @Override
     public Collection<Callable<ThreadAudit>> execute(RemoteTaskResult taskResult) throws Exception {
-        Collection<Callable<ThreadAudit>> output = new ArrayList<>();
+        Collection<Callable<ThreadAudit>> output = new ArrayList<Callable<ThreadAudit>>();
         Collection<String> classNames = getClassList(space.getSpace());
 
         for (String className : classNames) {
@@ -44,7 +44,7 @@ public class FileExportTask extends AbstractFileTask {
     }
 
     private Collection<String> getClassList(IJSpace space) throws RemoteException {
-        Collection<String> output = new ArrayList<>();
+        Collection<String> output = new ArrayList<String>();
         output.addAll(config.getClasses());
 
         if(output.isEmpty()){

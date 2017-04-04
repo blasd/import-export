@@ -32,7 +32,7 @@ public class Program {
 
         try {
             GigaSpace space = spaceConnectionFactory.createProxy();
-            List<AsyncFuture<RemoteTaskResult>> tasks = new ArrayList<>();
+            List<AsyncFuture<RemoteTaskResult>> tasks = new ArrayList<AsyncFuture<RemoteTaskResult>>();
 
             for(Integer partition : router.getTargetPartitions()){
                 AsyncFuture<RemoteTaskResult> resultSet;

@@ -24,16 +24,16 @@ public class ExportConfiguration implements Serializable {
     private String directory;
 
     @Parameter(names = {"-l", "--locators"}, description = "A comma separated list of XAP lookup locators for the target grid.", splitter = CommaParameterSplitter.class)
-    private List<String> locators = new ArrayList<>();
+    private List<String> locators = new ArrayList<String>();
 
     @Parameter(names = {"-g", "--groups"}, description = "A comma separated list of XAP lookup groups for the target grid.")
-    private List<String> groups = new ArrayList<>();
+    private List<String> groups = new ArrayList<String>();
 
     @Parameter(names = {"-c", "--classes"}, description = "A comma separated list of class names to export or import into the grid. The class names are case sensitive.")
-    private List<String> classes = new ArrayList<>();
+    private List<String> classes = new ArrayList<String>();
 
     @Parameter(names = {"-p", "--partitions"}, description = "A comma separated list of partitions that will be exported or imported.")
-    private List<Integer> partitions = new ArrayList<>();
+    private List<Integer> partitions = new ArrayList<Integer>();
 
     @Parameter(names = {"-u", "--username"}, description = "Specifies an XAP username with read and execute privileges. Required when connecting to a secured grid.")
     private String username;

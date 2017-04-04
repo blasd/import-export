@@ -21,12 +21,12 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 
     @Override
     public  Object toTemplate() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        return new SQLQuery<>(Class.forName(this.className), "");
+        return new SQLQuery(Class.forName(this.className), "");
     }
 
     @Override
     public HashMap<String, Object> toMap(Object instance) throws ClassNotFoundException, IllegalAccessException {
-        HashMap<String, Object> output = new HashMap<>();
+        HashMap<String, Object> output = new HashMap<String, Object>();
 
         Class<?> aClass = Class.forName(className);
         Field[] fields = aClass.getDeclaredFields();

@@ -74,7 +74,7 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
 
         GSIteratorConfig gsIteratorConfig = new GSIteratorConfig();
         gsIteratorConfig.setBufferSize(config.getBatch()).setIteratorScope(IteratorScope.CURRENT);
-        Collection<Object> templates = new ArrayList<>();
+        Collection<Object> templates = new ArrayList<Object>();
         templates.add(definition.toTemplate());
 
         GSIterator gsIterator = new GSIterator(space.getSpace(), templates, gsIteratorConfig);

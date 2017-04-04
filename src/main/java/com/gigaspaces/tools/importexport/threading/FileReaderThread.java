@@ -36,7 +36,9 @@ public class FileReaderThread implements Callable<ThreadAudit> {
         output.start();
 
         try {
-            try (GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath()))); CustomObjectInputStream input = new CustomObjectInputStream(zis)) {
+        	GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath())));
+        	CustomObjectInputStream input = new CustomObjectInputStream(zis);
+            try {
                 validateFileNameAndType(input.readUTF());
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
                 VersionSafeDescriptor typeDescriptor = classDefinition.getTypeDescriptor();
@@ -44,7 +46,7 @@ public class FileReaderThread implements Callable<ThreadAudit> {
 
                 int recordCount = 0;
 
-                Collection<Object> spaceInstances = new ArrayList<>();
+                Collection<Object> spaceInstances = new ArrayList<Object>();
 
                 Object record;
 
@@ -62,6 +64,9 @@ public class FileReaderThread implements Callable<ThreadAudit> {
                 } while(record != null);
 
                 output.setCount(recordCount);
+            } finally {
+            	input.close();
+            	zis.close();
             }
         } catch (Exception ex) {
             output.setException(ex);

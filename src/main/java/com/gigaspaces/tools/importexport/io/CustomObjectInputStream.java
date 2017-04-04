@@ -14,7 +14,7 @@ import java.util.HashMap;
 public class CustomObjectInputStream extends ObjectInputStream {
 
     private static final HashMap<String, Class<?>> primClasses
-            = new HashMap<>(8, 1.0F);
+            = new HashMap<String, Class<?>>(8, 1.0F);
     static {
         primClasses.put("boolean", boolean.class);
         primClasses.put("byte", byte.class);

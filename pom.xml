@@ -19,7 +19,7 @@
         </pluginRepository>
     </pluginRepositories>
     <properties>
-        <gsVersion>9.5.2-RELEASE</gsVersion>
+        <gsVersion>9.7.2-11000-RELEASE</gsVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
     </properties>
@@ -56,9 +56,10 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <!-- some projects still relies on XAP and Java6 -->
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.6</source>
+                    <target>1.6</target>
                 </configuration>
             </plugin>
             <plugin>

@@ -21,7 +21,7 @@ public class FileImportTask extends AbstractFileTask {
 
     @Override
     public Collection<Callable<ThreadAudit>> execute(RemoteTaskResult taskResult) throws Exception {
-        Collection<Callable<ThreadAudit>> output = new ArrayList<>();
+        Collection<Callable<ThreadAudit>> output = new ArrayList<Callable<ThreadAudit>>();
         Collection<Map.Entry<String, String>> filesToProcess = evaluateFilesToProcess();
 
         for (Map.Entry<String, String> map : filesToProcess) {
@@ -32,7 +32,7 @@ public class FileImportTask extends AbstractFileTask {
     }
 
     private Collection<Map.Entry<String, String>> evaluateFilesToProcess() {
-        Collection<Map.Entry<String, String>> output = new ArrayList<>();
+        Collection<Map.Entry<String, String>> output = new ArrayList<Map.Entry<String, String>>();
 
         File fileDirectory = new File(config.getDirectory());
         String[] fileList = fileDirectory.list();
@@ -48,7 +48,7 @@ public class FileImportTask extends AbstractFileTask {
                 }
 
                // preLoadTypeDescriptors(className, config);
-                output.add(new AbstractMap.SimpleEntry<>(className, name));
+                output.add(new AbstractMap.SimpleEntry<String, String>(className, name));
             }
         }
         return output;
