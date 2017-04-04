@@ -1,3 +1,5 @@
+# Fork to make compatible with Java6, POJO with parent classes and getters/setters instead of field, plus fix of RMI issues
+
 # Introduction
 
 The Import/Export tool was created as a collaborative effort between GigaSpaces Professional Services and GigaSpaces Support to facilitate reliable and efficient snapshots of data in a XAP datagrid.
