@@ -26,13 +26,7 @@ public  abstract class SpaceClassDefinition implements Serializable {
 	public static SpaceClassDefinition create(final GigaSpace space,
 			ExportConfiguration configuration,
 			String className) {
-		Function<String, SpaceTypeDescriptor> typeProvider = new Function<String, SpaceTypeDescriptor>() {
-
-			@Override
-			public SpaceTypeDescriptor apply(String someClass) {
-				return space.getTypeManager().getTypeDescriptor(someClass);
-			}
-		};
+		Function<String, SpaceTypeDescriptor> typeProvider = new ClassNameToSpaceTypeDescriptor(space.getTypeManager()) ;
 
 		// Get current class SpaceTypeDescriptor
 		SpaceTypeDescriptor unsafe = typeProvider.apply(className);

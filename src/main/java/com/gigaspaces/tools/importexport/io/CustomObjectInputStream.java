@@ -38,13 +38,15 @@ public class CustomObjectInputStream extends ObjectInputStream {
     protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
         String name = desc.getName();
         try {
+        	// This will try the class loader of the GS container
             return Class.forName(name, false, getCurrentClassLoader());
         } catch (ClassNotFoundException ex) {
             Class<?> cl = primClasses.get(name);
             if (cl != null) {
                 return cl;
             } else {
-                throw ex;
+            	// Try again with the com.gigaspaces.lrmi.classloading.LRMIClassLoader of the incoming call
+                return Class.forName(name, false, this.getClass().getClassLoader());
             }
         }
     }

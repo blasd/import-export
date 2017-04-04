@@ -1,19 +1,23 @@
 package com.gigaspaces.tools.importexport.threading;
 
-import com.gigaspaces.client.WriteModifiers;
-import com.gigaspaces.tools.importexport.config.ExportConfiguration;
-import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
-import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
-import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
-
-import org.openspaces.core.GigaSpace;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OptionalDataException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPInputStream;
+
+import org.openspaces.core.GigaSpace;
+
+import com.gigaspaces.client.WriteModifiers;
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
+import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
+import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
+import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 
 /**
  * Created by skyler on 12/1/2015.
@@ -42,9 +46,15 @@ public class FileReaderThread implements Callable<ThreadAudit> {
             try {
                 validateFileNameAndType(input.readUTF());
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
-                VersionSafeDescriptor typeDescriptor = classDefinition.getTypeDescriptor();
-                space.getTypeManager().registerTypeDescriptor(typeDescriptor.toSpaceTypeDescriptor());
-
+                
+            	VersionSafeDescriptor typeDescriptor = classDefinition.getTypeDescriptor();
+				
+				while (typeDescriptor != null) {
+					// We need to register all parent classes to enable export on imported POJO
+					space.getTypeManager().registerTypeDescriptor(typeDescriptor.toSpaceTypeDescriptor());
+					typeDescriptor = typeDescriptor.getSuperVersionSafeDescriptor();
+				}
+                
                 int recordCount = 0;
 
                 Collection<Object> spaceInstances = new ArrayList<Object>();

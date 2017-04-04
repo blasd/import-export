@@ -3,10 +3,15 @@ package com.gigaspaces.tools.importexport.remoting;
 import java.io.Serializable;
 
 import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
+import com.gigaspaces.tools.importexport.lang.ClassNameToSpaceTypeDescriptor;
 import com.gigaspaces.tools.importexport.lang.DocumentClassDefinition;
 import com.gigaspaces.tools.importexport.lang.JavaClassDefinition;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToInstanceFieldCallBack;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToInstanceFieldFilter;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToMapFieldCallBack;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToMapFieldFilter;
 import com.gigaspaces.tools.importexport.threading.FileCreatorThread;
 import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
@@ -22,6 +27,12 @@ public class LRMIClassLoadHacker implements Serializable {
     private ThreadAudit threadAudit;
 
     private SpaceClassDefinition spaceClassDefinition;
+    private ClassNameToSpaceTypeDescriptor classNameToSpaceTypeDescriptor;
+    private ToMapFieldFilter toMapFieldFilter;
+    private ToMapFieldCallBack toMapFieldCallBack;
+    private ToInstanceFieldFilter toInstanceFieldFilter;
+    private ToInstanceFieldCallBack toInstanceFieldCallBack;
+    
     private JavaClassDefinition javaClassDefinition;
     private DocumentClassDefinition documentClassDefinition;
     private VersionSafeDescriptor versionSafeDescriptor;

@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.gigaspaces.internal.utils.ReflectionUtils;
 import com.gigaspaces.internal.utils.ReflectionUtils.FieldCallback;
@@ -17,7 +18,65 @@ import com.j_spaces.core.client.SQLQuery;
  * Created by skyler on 12/1/2015.
  */
 public class JavaClassDefinition extends SpaceClassDefinition implements Serializable {
-    private static final long serialVersionUID = 4910571443452951970L;
+	public final class ToMapFieldFilter implements FieldFilter {
+		@Override
+		public boolean matches(Field field) {
+			return !Modifier.isStatic(field.getModifiers());
+		}
+	}
+
+    public final class ToMapFieldCallBack implements FieldCallback {
+		private final Object instance;
+		private final HashMap<String, Object> output;
+
+		private ToMapFieldCallBack(Object instance, HashMap<String, Object> output) {
+			this.instance = instance;
+			this.output = output;
+		}
+
+		@Override
+		public void doWith(Field currentField) throws IllegalArgumentException, IllegalAccessException {
+			ReflectionUtils.makeAccessible(currentField);
+
+			output.put(currentField.getName(), currentField.get(instance));
+		}
+	}
+
+	public final class ToInstanceFieldFilter implements FieldFilter {
+		private final Entry<String, Object> property;
+
+		private ToInstanceFieldFilter(Entry<String, Object> property) {
+			this.property = property;
+		}
+
+		@Override
+		public boolean matches(Field field) {
+			return field.getName().equals(property.getKey()) && !Modifier.isStatic(field.getModifiers());
+		}
+	}
+
+	public final class ToInstanceFieldCallBack implements FieldCallback {
+		private final Object output;
+		private final Entry<String, Object> property;
+
+		private ToInstanceFieldCallBack(Object output, Entry<String, Object> property) {
+			this.output = output;
+			this.property = property;
+		}
+
+		@Override
+		public void doWith(Field currentField) throws IllegalArgumentException, IllegalAccessException {
+			ReflectionUtils.makeAccessible(currentField);
+
+			try {
+				currentField.set(output, property.getValue());
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private static final long serialVersionUID = 4910571443452951970L;
     private transient Field routingField;
 	private transient Method routingGetter;
 
@@ -37,21 +96,7 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 		Class<?> aClass = Class.forName(className);
 
 		// Iterate through all fields, including parent classes
-		ReflectionUtils.doWithFields(aClass, new FieldCallback() {
-
-			@Override
-			public void doWith(Field currentField) throws IllegalArgumentException, IllegalAccessException {
-				ReflectionUtils.makeAccessible(currentField);
-
-				output.put(currentField.getName(), currentField.get(instance));
-			}
-		}, new FieldFilter() {
-
-			@Override
-			public boolean matches(Field field) {
-				return !Modifier.isStatic(field.getModifiers());
-			}
-		});
+		ReflectionUtils.doWithFields(aClass, new ToMapFieldCallBack(instance, output), new ToMapFieldFilter());
 
 		return output;
 	}
@@ -108,25 +153,7 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 
 		for (final Map.Entry<String, Object> property : asMap.entrySet()) {
 			// Iterate through all fields, including parent classes
-			ReflectionUtils.doWithFields(aClass, new FieldCallback() {
-
-				@Override
-				public void doWith(Field currentField) throws IllegalArgumentException, IllegalAccessException {
-					ReflectionUtils.makeAccessible(currentField);
-
-					try {
-						currentField.set(output, property.getValue());
-					} catch (Throwable e) {
-						e.printStackTrace();
-					}
-				}
-			}, new FieldFilter() {
-
-				@Override
-				public boolean matches(Field field) {
-					return field.getName().equals(property.getKey()) && !Modifier.isStatic(field.getModifiers());
-				}
-			});
+			ReflectionUtils.doWithFields(aClass, new ToInstanceFieldCallBack(output, property), new ToInstanceFieldFilter(property));
 		}
 
 		return output;
