@@ -1,11 +1,13 @@
 package com.gigaspaces.tools.importexport.lang;
 
-import com.gigaspaces.metadata.SpaceTypeDescriptor;
-import com.gigaspaces.tools.importexport.config.ExportConfiguration;
-import org.openspaces.core.GigaSpace;
-
 import java.io.Serializable;
 import java.util.HashMap;
+
+import org.openspaces.core.GigaSpace;
+
+import com.gigaspaces.metadata.SpaceTypeDescriptor;
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
+import com.google.common.base.Function;
 
 /**
  * Created by skyler on 11/30/2015.
@@ -21,19 +23,32 @@ public  abstract class SpaceClassDefinition implements Serializable {
         this.typeDescriptor = typeDescriptor;
     }
 
-    public static SpaceClassDefinition create(GigaSpace space, ExportConfiguration configuration, String className){
-        SpaceClassDefinition output;
-        SpaceTypeDescriptor typeDescriptor = space.getTypeManager().getTypeDescriptor(className);
-        VersionSafeDescriptor versionSafeDescriptor = VersionSafeDescriptor.create(typeDescriptor);
+	public static SpaceClassDefinition create(final GigaSpace space,
+			ExportConfiguration configuration,
+			String className) {
+		Function<String, SpaceTypeDescriptor> typeProvider = new Function<String, SpaceTypeDescriptor>() {
 
-        if(!typeDescriptor.isConcreteType() || configuration.isJarLess()){
-            output = new DocumentClassDefinition(className, versionSafeDescriptor);
-        } else {
-            output = new JavaClassDefinition(className, versionSafeDescriptor);
-        }
+			@Override
+			public SpaceTypeDescriptor apply(String someClass) {
+				return space.getTypeManager().getTypeDescriptor(someClass);
+			}
+		};
 
-        return output;
-    }
+		// Get current class SpaceTypeDescriptor
+		SpaceTypeDescriptor unsafe = typeProvider.apply(className);
+
+		// Compute the VersionSafeDescriptor for current class, and its parent classes
+		VersionSafeDescriptor versionSafeDescriptor = VersionSafeDescriptor.create(unsafe, typeProvider);
+
+		final SpaceClassDefinition output;
+		if (!unsafe.isConcreteType() || configuration.isJarLess()) {
+			output = new DocumentClassDefinition(className, versionSafeDescriptor);
+		} else {
+			output = new JavaClassDefinition(className, versionSafeDescriptor);
+		}
+
+		return output;
+	}
 
     public abstract HashMap<String, Object> toMap(Object instance) throws ClassNotFoundException, IllegalAccessException;
 

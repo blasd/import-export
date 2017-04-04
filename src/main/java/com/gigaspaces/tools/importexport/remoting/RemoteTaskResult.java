@@ -1,10 +1,10 @@
 package com.gigaspaces.tools.importexport.remoting;
 
-import com.gigaspaces.tools.importexport.threading.ThreadAudit;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 
 public class RemoteTaskResult implements Serializable {
 

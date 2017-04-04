@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class FileExportTask extends AbstractFileTask {
     private static Logger logger = Logger.getLogger(Constants.LOGGER_NAME);
     private static final long serialVersionUID = 7132089756006051447L;
-    private static final String JAVA_LANG_OBJECT = "java.lang.Object";
+    public static final String JAVA_LANG_OBJECT = "java.lang.Object";
 
     private Integer newPartitionCount;
 

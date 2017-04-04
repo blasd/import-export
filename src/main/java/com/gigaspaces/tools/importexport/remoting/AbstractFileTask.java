@@ -1,8 +1,5 @@
 package com.gigaspaces.tools.importexport.remoting;
 
-import com.gigaspaces.tools.importexport.config.ExportConfiguration;
-import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
-import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 import org.openspaces.admin.Admin;
 import org.openspaces.admin.gsc.GridServiceContainer;
 import org.openspaces.admin.pu.ProcessingUnit;
@@ -12,6 +9,10 @@ import org.openspaces.core.cluster.ClusterInfo;
 import org.openspaces.core.cluster.ClusterInfoAware;
 import org.openspaces.core.executor.Task;
 import org.openspaces.core.executor.TaskGigaSpace;
+
+import com.gigaspaces.tools.importexport.config.ExportConfiguration;
+import com.gigaspaces.tools.importexport.config.SpaceConnectionFactory;
+import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -137,7 +138,10 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
         ExecutorService executorService = null;
 
         try {
-            executorService = Executors.newFixedThreadPool(config.getThreadCount(), Executors.privilegedThreadFactory());
+			// In some cases, the policy does not allow to write files
+			// ThreadFactory threadFactory = Executors.privilegedThreadFactory();
+			ThreadFactory threadFactory = Executors.defaultThreadFactory();
+            executorService = Executors.newFixedThreadPool(config.getThreadCount(), threadFactory);
             List<Future<ThreadAudit>> futures = executorService.invokeAll(threads);
 
             while (!futures.isEmpty()) {

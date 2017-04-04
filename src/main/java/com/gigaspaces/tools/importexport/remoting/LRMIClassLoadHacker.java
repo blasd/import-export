@@ -1,5 +1,7 @@
 package com.gigaspaces.tools.importexport.remoting;
 
+import java.io.Serializable;
+
 import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
 import com.gigaspaces.tools.importexport.lang.DocumentClassDefinition;
 import com.gigaspaces.tools.importexport.lang.JavaClassDefinition;
@@ -8,8 +10,6 @@ import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
 import com.gigaspaces.tools.importexport.threading.FileCreatorThread;
 import com.gigaspaces.tools.importexport.threading.FileReaderThread;
 import com.gigaspaces.tools.importexport.threading.ThreadAudit;
-
-import java.io.Serializable;
 
 /**
  * Created by skyler on 12/2/2015.
