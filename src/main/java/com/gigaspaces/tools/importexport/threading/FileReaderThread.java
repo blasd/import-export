@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import org.openspaces.core.GigaSpace;
@@ -18,11 +20,15 @@ import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
+import com.gigaspaces.tools.importexport.remoting.FileImportTask;
+import com.google.common.io.CountingInputStream;
 
 /**
  * Created by skyler on 12/1/2015.
  */
 public class FileReaderThread implements Callable<ThreadAudit> {
+	private static final Logger LOGGER = Logger.getLogger(FileReaderThread.class.getName());
+	
     private final GigaSpace space;
     private final ExportConfiguration config;
     private final String className;
@@ -41,8 +47,14 @@ public class FileReaderThread implements Callable<ThreadAudit> {
         output.start();
 
         try {
-        	GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(new FileInputStream(getFullFilePath())));
-        	CustomObjectInputStream input = new CustomObjectInputStream(zis);
+			String fullFilePath = getFullFilePath();
+			File asFile = new File(fullFilePath);
+			CountingInputStream counting = new CountingInputStream(new FileInputStream(fullFilePath));
+			GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(counting));
+			CustomObjectInputStream input = new CustomObjectInputStream(zis);
+            
+            int recordCount = 0;
+            
             try {
                 validateFileNameAndType(input.readUTF());
                 SpaceClassDefinition classDefinition = (SpaceClassDefinition) input.readObject();
@@ -54,8 +66,6 @@ public class FileReaderThread implements Callable<ThreadAudit> {
 					space.getTypeManager().registerTypeDescriptor(typeDescriptor.toSpaceTypeDescriptor());
 					typeDescriptor = typeDescriptor.getSuperVersionSafeDescriptor();
 				}
-                
-                int recordCount = 0;
 
                 Collection<Object> spaceInstances = new ArrayList<Object>();
 
@@ -67,6 +77,10 @@ public class FileReaderThread implements Callable<ThreadAudit> {
                     if(record != null) {
                         spaceInstances.add(classDefinition.toInstance((HashMap<String, Object>) record));
                         recordCount++;
+
+						if (recordCount%1000 == 0) {
+							LOGGER.info("We have read " + recordCount + " records for " + counting.getCount() + "bytes out of " + asFile.length() + " for "+ asFile);
+						}
                     }
 
                     if((spaceInstances.size() > 0 && (spaceInstances.size() % config.getBatch() == 0)) || (spaceInstances.size() > 0 && record == null)){
@@ -79,7 +93,10 @@ public class FileReaderThread implements Callable<ThreadAudit> {
             	input.close();
             	zis.close();
             }
+
+			LOGGER.info("We have successfully read " + recordCount + " records for " + counting.getCount() + " bytes for "+ asFile);
         } catch (Exception ex) {
+			LOGGER.log(Level.WARNING, "Issue when loading " + fileName, ex);
             output.setException(ex);
         }
 
