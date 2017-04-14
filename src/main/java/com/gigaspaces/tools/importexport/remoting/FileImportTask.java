@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 import com.gigaspaces.tools.importexport.Constants;
 import com.gigaspaces.tools.importexport.config.ExportConfiguration;
@@ -14,6 +15,8 @@ import com.gigaspaces.tools.importexport.threading.ThreadAudit;
 
 public class FileImportTask extends AbstractFileTask {
     private static final long serialVersionUID = -8411361196455200746L;
+    
+	private static final Logger LOGGER = Logger.getLogger(FileImportTask.class.getName());
 
     public FileImportTask(ExportConfiguration config) {
         super(config);
@@ -46,6 +49,8 @@ public class FileImportTask extends AbstractFileTask {
                         && !config.getClasses().contains(className)) {
                     continue;
                 }
+
+				LOGGER.info("Adding for import: " + name);
 
                // preLoadTypeDescriptors(className, config);
                 output.add(new AbstractMap.SimpleEntry<String, String>(className, name));
