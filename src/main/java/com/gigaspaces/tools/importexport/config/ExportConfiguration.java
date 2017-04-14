@@ -45,10 +45,10 @@ public class ExportConfiguration implements Serializable {
     private Integer newPartitionCount = 0;
 
     @Parameter(names = {"--thread-sleep"}, description = "Number of milliseconds to sleep between checks for task completion.")
-    private Integer threadSleepMilliseconds = 1000;
+    private long threadSleepMilliseconds = 1000;
 
     @Parameter(names = { "-t", "--threads" }, description = "Number of threads to simultaneously process import or export files.")
-    private Integer threadCount = 20;
+    private int threadCount = 20;
 
     @Parameter(names = { "--pu-name" }, description = "Overrides the name of the processing unit, relevant only when the processing unit is different from space name.")
     private String processingUnitName;
@@ -147,11 +147,11 @@ public class ExportConfiguration implements Serializable {
         this.operation = operation;
     }
 
-    public Integer getThreadSleepMilliseconds() {
+    public long getThreadSleepMilliseconds() {
         return threadSleepMilliseconds;
     }
 
-    public void setThreadSleepMilliseconds(Integer threadSleepMilliseconds) {
+    public void setThreadSleepMilliseconds(long threadSleepMilliseconds) {
         this.threadSleepMilliseconds = threadSleepMilliseconds;
     }
 

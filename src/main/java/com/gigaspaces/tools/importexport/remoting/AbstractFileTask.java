@@ -29,6 +29,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     public static final String PROCESS_ID_KEY = "__PROCESS_ID";
     private static final String EXCEPTION_KEY = "__EXCEPTION";
     protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
+    protected final com.gigaspacesC.tools.importexport.remoting.LRMIClassLoadHacker hackerC = new com.gigaspacesC.tools.importexport.remoting.LRMIClassLoadHacker();
 
     protected ExportConfiguration config;
     protected ClusterInfo clusterInfo;
@@ -82,10 +83,14 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     public HashMap<String, Object> call() {
         HashMap<String, Object> output = new HashMap<String, Object>();
         SpaceConnectionFactory connections = new SpaceConnectionFactory(config);
-
+        
         try {
             Admin spaceAdmin = connections.createAdmin();
-            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(config.getProcessingUnitName(), 60, TimeUnit.SECONDS);
+            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(config.getProcessingUnitName(), 10, TimeUnit.SECONDS);
+            
+            if (processingUnit == null) {
+                throw new IllegalStateException("Processing unit '" + config.getProcessingUnitName() + "' instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
+            }
             processingUnit.waitFor(processingUnit.getTotalNumberOfInstances());
             ProcessingUnitInstance thisInstance = null;
 
@@ -97,7 +102,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             }
 
             if (thisInstance == null) {
-                throw new IllegalStateException("Processing unit instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
+                throw new IllegalStateException("Processing unit '" + config.getProcessingUnitName() + "' instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
             }
 
             GridServiceContainer gridServiceContainer = thisInstance.getGridServiceContainer();
