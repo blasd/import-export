@@ -82,10 +82,14 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     public HashMap<String, Object> call() {
         HashMap<String, Object> output = new HashMap<String, Object>();
         SpaceConnectionFactory connections = new SpaceConnectionFactory(config);
-
+        
         try {
             Admin spaceAdmin = connections.createAdmin();
-            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(config.getProcessingUnitName(), 60, TimeUnit.SECONDS);
+            ProcessingUnit processingUnit = spaceAdmin.getProcessingUnits().waitFor(config.getProcessingUnitName(), 10, TimeUnit.SECONDS);
+            
+            if (processingUnit == null) {
+                throw new IllegalStateException("Processing unit '" + config.getProcessingUnitName() + "' instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
+            }
             processingUnit.waitFor(processingUnit.getTotalNumberOfInstances());
             ProcessingUnitInstance thisInstance = null;
 
@@ -97,7 +101,7 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
             }
 
             if (thisInstance == null) {
-                throw new IllegalStateException("Processing unit instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
+                throw new IllegalStateException("Processing unit '" + config.getProcessingUnitName() + "' instance not found. Attempted partitionId id: " + clusterInfo.getInstanceId());
             }
 
             GridServiceContainer gridServiceContainer = thisInstance.getGridServiceContainer();

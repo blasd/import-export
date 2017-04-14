@@ -59,7 +59,14 @@ public class FileImportTask extends AbstractFileTask {
         return output;
     }
 
-    private String getSuffixRegex() {
-        return ".\\d+." + clusterInfo.getInstanceId() + Constants.FILE_EXTENSION;
-    }
+	private String getSuffixRegex() {
+		if (true) {
+			// By default, we restrict files from the matching partition: it requires -n to be correctly configured when
+			// running the export
+			return ".\\d+." + clusterInfo.getInstanceId() + Constants.FILE_EXTENSION;
+		} else {
+			// We enable loading from any partition. We do it to force loading from a cluster with a different typology
+			return ".\\d+." + "\\d+" + Constants.FILE_EXTENSION;
+		}
+	}
 }
