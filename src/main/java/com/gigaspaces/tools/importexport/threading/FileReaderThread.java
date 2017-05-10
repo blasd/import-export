@@ -20,7 +20,6 @@ import com.gigaspaces.tools.importexport.config.ExportConfiguration;
 import com.gigaspaces.tools.importexport.io.CustomObjectInputStream;
 import com.gigaspaces.tools.importexport.lang.SpaceClassDefinition;
 import com.gigaspaces.tools.importexport.lang.VersionSafeDescriptor;
-import com.gigaspaces.tools.importexport.remoting.FileImportTask;
 import com.google.common.io.CountingInputStream;
 
 /**

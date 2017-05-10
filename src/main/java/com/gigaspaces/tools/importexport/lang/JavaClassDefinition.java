@@ -12,6 +12,8 @@ import java.util.Map.Entry;
 import com.gigaspaces.internal.utils.ReflectionUtils;
 import com.gigaspaces.internal.utils.ReflectionUtils.FieldCallback;
 import com.gigaspaces.internal.utils.ReflectionUtils.FieldFilter;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToInstanceFieldCallBack;
+import com.gigaspaces.tools.importexport.lang.JavaClassDefinition.ToInstanceFieldFilter;
 import com.j_spaces.core.client.SQLQuery;
 
 /**
@@ -149,11 +151,23 @@ public class JavaClassDefinition extends SpaceClassDefinition implements Seriali
 	public Object toInstance(HashMap<String, Object> asMap)
 			throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException {
 		Class<?> aClass = Class.forName(className);
-		final Object output = aClass.newInstance();
+
+		final Object output;
+		try {
+			output = aClass.newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException("Invalid class: " + className, e);
+		}
 
 		for (final Map.Entry<String, Object> property : asMap.entrySet()) {
-			// Iterate through all fields, including parent classes
-			ReflectionUtils.doWithFields(aClass, new ToInstanceFieldCallBack(output, property), new ToInstanceFieldFilter(property));
+			try {
+				// Iterate through all fields, including parent classes
+				ReflectionUtils.doWithFields(aClass,
+						new ToInstanceFieldCallBack(output, property),
+						new ToInstanceFieldFilter(property));
+			} catch (IllegalArgumentException e) {
+				throw new RuntimeException("Invalid field: " + property + " on class: " + className, e);
+			}
 		}
 
 		return output;
