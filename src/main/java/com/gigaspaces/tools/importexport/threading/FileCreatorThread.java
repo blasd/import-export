@@ -83,12 +83,24 @@ public class FileCreatorThread implements Callable<ThreadAudit> {
             Object instance = gsIterator.next();
             Object routingValue = definition.getRoutingValue(instance);
 
+            if (routingValue == null) {
+            	logger.warning("Missing routing value in " + routingValue);
+            	continue;
+            }
+
             int hashCode = adjustNegativeHashCodes(routingValue.hashCode());
             int realRoute = (hashCode % this.newPartitionSchema) + 1;
 
             if(realRoute == newPartitionId) {
                 writeToFile(instance, definition, audit);
                 output++;
+            }
+            
+            if (output % 100000 == 0) {
+            	// We should not need a large heap to reload an objectStream: we need to reset the buffer of written references else it would grow very big on reload
+            	// A side-effect is the memory footprint when reloaded will be bigger as references will not be shared
+            	logger.info("We reset the ObjectOutputStream: previous objects references will not be re-used");
+            	objectOutputStream.reset();
             }
         }
 
