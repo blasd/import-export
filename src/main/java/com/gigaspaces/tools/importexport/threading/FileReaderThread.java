@@ -140,8 +140,33 @@ public class FileReaderThread implements Callable<ThreadAudit> {
 	}
 
 	private void flush(Collection<Object> spaceInstances) {
-		space.writeMultiple(spaceInstances.toArray(), WriteModifiers.ONE_WAY);
-		spaceInstances.clear();
+		if (spaceInstances.isEmpty()) {
+			// Gigaspace throw when submitting an empty array
+		} else {
+			try {
+				space.writeMultiple(spaceInstances.toArray(), WriteModifiers.ONE_WAY);
+			} catch (RuntimeException e) {
+				LOGGER.log(Level.FINE,
+						"Failure when publishing " + spaceInstances.size() + " items. Resubmitting one by one",
+						e);
+
+				for (Object spaceInstance : spaceInstances) {
+					try {
+						space.write(spaceInstance, WriteModifiers.ONE_WAY);
+					} catch (RuntimeException e2) {
+						onWriteFailure(spaceInstance, e2);
+					}
+				}
+
+			}
+			spaceInstances.clear();
+		}
+	}
+
+	private void onWriteFailure(Object spaceInstance, RuntimeException e2) {
+		LOGGER.log(Level.WARNING, "Failure when publishing " + spaceInstance, e2);
+
+		// continue with next item
 	}
 
 	public String getFullFilePath() {

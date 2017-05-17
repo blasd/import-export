@@ -29,7 +29,6 @@ public abstract class AbstractFileTask implements Task<RemoteTaskResult>, Serial
     public static final String PROCESS_ID_KEY = "__PROCESS_ID";
     private static final String EXCEPTION_KEY = "__EXCEPTION";
     protected final LRMIClassLoadHacker hacker = new LRMIClassLoadHacker();
-    protected final com.gigaspacesC.tools.importexport.remoting.LRMIClassLoadHacker hackerC = new com.gigaspacesC.tools.importexport.remoting.LRMIClassLoadHacker();
 
     protected ExportConfiguration config;
     protected ClusterInfo clusterInfo;
